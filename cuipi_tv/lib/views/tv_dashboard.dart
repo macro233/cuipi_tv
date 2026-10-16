@@ -963,6 +963,12 @@ class _TvDashboardViewState extends State<TvDashboardView> {
     _videoController?.pause();
     _videoController?.dispose();
     _videoController = null;
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
     setState(() {
       _playerDisplayMode = PlayerDisplayMode.hidden;
       _showEpisodeDrawer = false;
@@ -1481,6 +1487,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
     final textTheme = Theme.of(context).textTheme;
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 800;
+    final isTv = screenWidth >= 1050;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -1505,8 +1512,8 @@ class _TvDashboardViewState extends State<TvDashboardView> {
               bottom: true,
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: isMobile ? 12 : 28,
-                  vertical: isMobile ? 8 : 20,
+                  horizontal: isMobile ? 12 : (isTv ? 36 : 28),
+                  vertical: isMobile ? 8 : (isTv ? 24 : 20),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1516,9 +1523,10 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                       onTabChanged: (tab) => setState(() => _selectedTab = tab),
                       onOpenSettings: () => setState(() => _showGlobalSettingsModal = true),
                       isMobile: isMobile,
+                      isTv: isTv,
                       currentThemeKey: _currentThemeKey,
                     ),
-                    SizedBox(height: isMobile ? 10 : 20),
+                    SizedBox(height: isMobile ? 10 : (isTv ? 24 : 20)),
                     Expanded(
                       child: isMobile
                           ? SingleChildScrollView(
@@ -1527,7 +1535,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                               padding: EdgeInsets.only(
                                 bottom: _playerDisplayMode == PlayerDisplayMode.mini ? 84 : 0,
                               ),
-                              child: _buildMainTabContent(isMobile: true),
+                              child: _buildMainTabContent(isMobile: true, isTv: false),
                             )
                           : Row(
                               crossAxisAlignment: CrossAxisAlignment.start,
@@ -1540,12 +1548,12 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                                     padding: EdgeInsets.only(
                                       bottom: _playerDisplayMode == PlayerDisplayMode.mini ? 84 : 0,
                                     ),
-                                    child: _buildMainTabContent(isMobile: false),
+                                    child: _buildMainTabContent(isMobile: false, isTv: isTv),
                                   ),
                                 ),
-                                const SizedBox(width: 20),
+                                SizedBox(width: isTv ? 28 : 20),
                                 SizedBox(
-                                  width: 380,
+                                  width: isTv ? 410 : 380,
                                   child: SingleChildScrollView(
                                     physics: const BouncingScrollPhysics(),
                                     padding: EdgeInsets.only(
@@ -1553,11 +1561,11 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                                     ),
                                     child: Column(
                                       children: [
-                                        _buildCategorySearchCard(),  // 分类搜索
+                                        _buildCategorySearchCard(isTv: isTv),  // 分类搜索
                                         const SizedBox(height: 16),
-                                        _buildHotPosterWall(),       // 热门海报墙
+                                        _buildHotPosterWall(isTv: isTv),       // 热门海报墙
                                         const SizedBox(height: 16),
-                                        _buildTvQrSearchCard(),      // 扫码控制（缩小）
+                                        _buildTvQrSearchCard(isTv: isTv),      // 扫码控制（缩小）
                                       ],
                                     ),
                                   ),
@@ -1594,10 +1602,10 @@ class _TvDashboardViewState extends State<TvDashboardView> {
   }
 
   // --- Main Tab Router ---
-  Widget _buildMainTabContent({bool isMobile = false}) {
+  Widget _buildMainTabContent({bool isMobile = false, bool isTv = false}) {
     switch (_selectedTab) {
       case 'vod':
-        return _buildVodView(isMobile: isMobile);
+        return _buildVodView(isMobile: isMobile, isTv: isTv);
       case 'live':
         return _buildLiveView();
       case 'local':
@@ -1627,12 +1635,15 @@ class _TvDashboardViewState extends State<TvDashboardView> {
       case 'history':
         return _buildHistoryView();
       default:
-        return _buildVodView(isMobile: isMobile);
+        return _buildVodView(isMobile: isMobile, isTv: isTv);
     }
   }
 
   // --- VOD View with Poster Wall + Multi-filter ---
-  Widget _buildVodView({bool isMobile = false}) {
+  Widget _buildVodView({bool isMobile = false, bool isTv = false}) {
+    final theme = ThemePreset.getByKey(_currentThemeKey);
+    final isLight = theme.isLight;
+
     // Apply all filters
     var filtered = List<Map<String, dynamic>>.from(_vodList);
 
@@ -1693,7 +1704,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
         break;
     }
 
-    // 默认主页模式：呈现参考图2设计的包豪斯瑞士风格模块化卡片叠放（可自定义、右上角专属搜索）
+    // 默认主页模式：呈现包豪斯瑞士风格模块化卡片叠放（可自定义、右上角专属搜索）
     if (_vodCategory == 'all' && _searchQuery.isEmpty) {
       final enabledCardList = _cardDefinitions.where((c) => _enabledCards[c['key']] ?? true).toList();
 
@@ -1711,27 +1722,31 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                   children: [
                     Container(
                       width: 4,
-                      height: 18,
+                      height: isTv ? 22 : 18,
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFC83B),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       "探索热门分类卡片",
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, color: Colors.white),
+                      style: TextStyle(
+                        fontSize: isTv ? 20 : 16,
+                        fontWeight: FontWeight.w900,
+                        color: theme.textColor,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
                       decoration: BoxDecoration(
-                        color: const Color(0x33FFC83B),
+                        color: const Color(0xFFFFC83B).withOpacity(0.18),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: const Text(
-                        "参考图2设计",
-                        style: TextStyle(color: Color(0xFFFFC83B), fontSize: 10, fontWeight: FontWeight.bold),
+                        "BAUHAUS 极简",
+                        style: TextStyle(color: Color(0xFFE5A000), fontSize: 10, fontWeight: FontWeight.w800),
                       ),
                     ),
                   ],
@@ -1755,9 +1770,12 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
                             decoration: BoxDecoration(
-                              color: isFocused ? const Color(0xFFFFC83B) : Colors.white.withOpacity(0.08),
+                              color: isFocused
+                                  ? const Color(0xFFFFC83B)
+                                  : (isLight ? Colors.white.withOpacity(0.85) : Colors.white.withOpacity(0.08)),
                               borderRadius: BorderRadius.circular(20),
-                              border: Border.all(color: isFocused ? const Color(0xFFFFD166) : Colors.white24),
+                              border: Border.all(
+                                  color: isFocused ? const Color(0xFFFFD166) : (isLight ? theme.cardBorder : Colors.white24)),
                             ),
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
@@ -1771,7 +1789,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                                 Text(
                                   allExpanded ? "层叠卡片" : "全部展开",
                                   style: TextStyle(
-                                    color: isFocused ? Colors.black87 : Colors.white,
+                                    color: isFocused ? Colors.black87 : theme.textColor,
                                     fontSize: 11,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -1789,18 +1807,25 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                         return Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                           decoration: BoxDecoration(
-                            color: isFocused ? const Color(0xFF1860FF) : Colors.white.withOpacity(0.08),
+                            color: isFocused
+                                ? const Color(0xFF1860FF)
+                                : (isLight ? Colors.white.withOpacity(0.85) : Colors.white.withOpacity(0.08)),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: isFocused ? const Color(0xFF60A5FA) : Colors.white24),
+                            border: Border.all(
+                                color: isFocused ? const Color(0xFF60A5FA) : (isLight ? theme.cardBorder : Colors.white24)),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
-                            children: const [
-                              Icon(Icons.tune_rounded, color: Color(0xFF38BDF8), size: 14),
-                              SizedBox(width: 4),
+                            children: [
+                              const Icon(Icons.tune_rounded, color: Color(0xFF38BDF8), size: 14),
+                              const SizedBox(width: 4),
                               Text(
                                 "自定义卡片",
-                                style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w700),
+                                style: TextStyle(
+                                  color: isFocused ? Colors.white : theme.textColor,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w700,
+                                ),
                               ),
                             ],
                           ),
@@ -1813,20 +1838,23 @@ class _TvDashboardViewState extends State<TvDashboardView> {
             ),
           ),
 
-          // 核心：包豪斯瑞士风格模块化卡片叠放（参考图2设计，右上角带专属搜索ICON）
+          // 核心：包豪斯瑞士风格模块化卡片叠放（右上角带专属搜索ICON）
           if (enabledCardList.isEmpty)
             Container(
               padding: const EdgeInsets.all(32),
               decoration: BoxDecoration(
-                color: const Color(0xFF1A1F2C),
+                color: isLight ? Colors.white.withOpacity(0.85) : const Color(0xFF1A1F2C),
                 borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: isLight ? theme.cardBorder : Colors.white12),
               ),
               child: Center(
                 child: Column(
                   children: [
-                    const Icon(Icons.dashboard_customize_outlined, color: Colors.white54, size: 40),
+                    Icon(Icons.dashboard_customize_outlined,
+                        color: isLight ? theme.secondaryTextColor : Colors.white54, size: 40),
                     const SizedBox(height: 12),
-                    const Text("未开启任何分类卡片展示", style: TextStyle(color: Colors.white70, fontSize: 14)),
+                    Text("未开启任何分类卡片展示",
+                        style: TextStyle(color: theme.secondaryTextColor, fontSize: 14)),
                     const SizedBox(height: 12),
                     ElevatedButton.icon(
                       icon: const Icon(Icons.add, size: 16),
@@ -1839,7 +1867,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
             )
           else
             ...enabledCardList.asMap().entries.map((entry) {
-              final cardWidget = _buildSwissModularCard(entry.value, isMobile: isMobile, index: entry.key);
+              final cardWidget = _buildSwissModularCard(entry.value, isMobile: isMobile, isTv: isTv, index: entry.key);
               if (isMobile && _deckStackedMode && entry.key > 0) {
                 return Transform.translate(
                   offset: Offset(0, -14.0 * entry.key),
@@ -2355,8 +2383,8 @@ class _TvDashboardViewState extends State<TvDashboardView> {
     );
   }
 
-  /// 模块化瑞士包豪斯卡片组件（参考图2设计：支持层叠卡片效果、右上角专属搜索、点击展开/折叠）
-  Widget _buildSwissModularCard(Map<String, dynamic> card, {bool isMobile = false, int index = 0}) {
+  /// 模块化瑞士包豪斯卡片组件（支持层叠卡片效果、右上角专属搜索、点击展开/折叠、TV大屏专属超大尺寸放大）
+  Widget _buildSwissModularCard(Map<String, dynamic> card, {bool isMobile = false, bool isTv = false, int index = 0}) {
     final key = card['key'] as String;
     final num = card['num'] as String;
     final title = card['title'] as String;
@@ -2372,21 +2400,21 @@ class _TvDashboardViewState extends State<TvDashboardView> {
 
     return Container(
       margin: EdgeInsets.only(
-        bottom: (isMobile && _deckStackedMode) ? 4.0 : 18.0,
+        bottom: (isMobile && _deckStackedMode) ? 4.0 : (isTv ? 24.0 : 18.0),
       ),
       decoration: BoxDecoration(
         color: color,
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(isTv ? 32 : 26),
         boxShadow: [
           // 上部阴影：在重叠时清晰划分每一层卡片的上边缘 (参考图2实体卡片质感)
           BoxShadow(
             color: Colors.black.withOpacity(isMobile ? 0.35 : 0.2),
-            blurRadius: 14,
+            blurRadius: isTv ? 20 : 14,
             offset: const Offset(0, -3),
           ),
           BoxShadow(
             color: color.withOpacity(0.28),
-            blurRadius: 18,
+            blurRadius: isTv ? 24 : 18,
             offset: const Offset(0, 6),
           ),
         ],
@@ -2396,7 +2424,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
         children: [
           // 卡片顶部标题栏（参考图2瑞士包豪斯排版：左边编号+标题，中间极简说明，右边轮廓ICON、折叠指示器与右上角专属搜索）
           InkWell(
-            borderRadius: BorderRadius.circular(26),
+            borderRadius: BorderRadius.circular(isTv ? 32 : 26),
             onTap: isMobile
                 ? () {
                     setState(() {
@@ -2409,13 +2437,18 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                   }
                 : null,
             child: Padding(
-              padding: EdgeInsets.fromLTRB(isMobile ? 14 : 20, 14, isMobile ? 12 : 18, 12),
+              padding: EdgeInsets.fromLTRB(
+                isMobile ? 14 : (isTv ? 24 : 20),
+                isTv ? 18 : 14,
+                isMobile ? 12 : (isTv ? 22 : 18),
+                isTv ? 16 : 12,
+              ),
               child: Row(
                 children: [
                   // 1. 编号圆圈
                   Container(
-                    width: 36,
-                    height: 36,
+                    width: isTv ? 44 : 36,
+                    height: isTv ? 44 : 36,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: textColor.withOpacity(0.12),
@@ -2425,13 +2458,13 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                         num,
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
-                          fontSize: 16,
+                          fontSize: isTv ? 19 : 16,
                           color: textColor,
                         ),
                       ),
                     ),
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: isTv ? 16 : 12),
                   // 2. 主标题与副标
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2439,7 +2472,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                       Text(
                         title,
                         style: TextStyle(
-                          fontSize: isMobile ? 19 : 23,
+                          fontSize: isTv ? 27 : (isMobile ? 19 : 23),
                           fontWeight: FontWeight.w900,
                           color: textColor,
                           letterSpacing: -0.5,
@@ -2448,7 +2481,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                       Text(
                         enTitle,
                         style: TextStyle(
-                          fontSize: 9,
+                          fontSize: isTv ? 11 : 9,
                           fontWeight: FontWeight.w800,
                           color: textColor.withOpacity(0.55),
                           letterSpacing: 1.2,
@@ -2456,7 +2489,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                       ),
                     ],
                   ),
-                  const SizedBox(width: 12),
+                  SizedBox(width: isTv ? 18 : 12),
                   // 3. 中部说明文字
                   if (!isMobile)
                     Expanded(
@@ -2468,9 +2501,9 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                             Text(
                               sub,
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: isTv ? 14 : 12,
                                 fontWeight: FontWeight.w700,
-                                color: textColor.withOpacity(0.8),
+                                color: textColor.withOpacity(0.85),
                               ),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
@@ -2478,9 +2511,9 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                             Text(
                               badge,
                               style: TextStyle(
-                                fontSize: 10,
+                                fontSize: isTv ? 12 : 10,
                                 fontWeight: FontWeight.w600,
-                                color: textColor.withOpacity(0.6),
+                                color: textColor.withOpacity(0.65),
                               ),
                             ),
                           ],
@@ -2492,7 +2525,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                   // 4. 轮廓线框图标
                   Icon(
                     icon,
-                    size: isMobile ? 24 : 30,
+                    size: isTv ? 36 : (isMobile ? 24 : 30),
                     color: textColor.withOpacity(0.75),
                   ),
                   if (isMobile) ...[
@@ -2504,7 +2537,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                       color: textColor.withOpacity(0.65),
                     ),
                   ],
-                  const SizedBox(width: 8),
+                  SizedBox(width: isTv ? 14 : 8),
                   // 5. 【核心需求】卡片右上角搜索 ICON 🔍
                   TvFocusable(
                     onTap: () {
@@ -2516,18 +2549,18 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                     },
                     builder: (context, isFocused) {
                       return Container(
-                        width: 36,
-                        height: 36,
+                        width: isTv ? 44 : 36,
+                        height: isTv ? 44 : 36,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isFocused ? textColor : textColor.withOpacity(0.14),
                           border: Border.all(color: textColor.withOpacity(0.2)),
-                          boxShadow: isFocused ? [BoxShadow(color: textColor.withOpacity(0.3), blurRadius: 8)] : null,
+                          boxShadow: isFocused ? [BoxShadow(color: textColor.withOpacity(0.35), blurRadius: 10)] : null,
                         ),
                         child: Center(
                           child: Icon(
                             Icons.search_rounded,
-                            size: 19,
+                            size: isTv ? 23 : 19,
                             color: isFocused
                                 ? (textColor == const Color(0xFF1E1B18) ? Colors.white : Colors.black)
                                 : textColor,
@@ -2546,156 +2579,164 @@ class _TvDashboardViewState extends State<TvDashboardView> {
             duration: const Duration(milliseconds: 240),
             crossFadeState: isExpanded ? CrossFadeState.showFirst : CrossFadeState.showSecond,
             firstChild: SizedBox(
-              height: isMobile ? 190 : 210,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: EdgeInsets.symmetric(horizontal: isMobile ? 14 : 20, vertical: 6),
-              itemCount: (items.length > 10 ? 10 : items.length) + 1,
-              separatorBuilder: (context, index) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                // 最后一个卡片是 "查看全部 >"
-                if (index == (items.length > 10 ? 10 : items.length)) {
+              height: isTv ? 285 : (isMobile ? 190 : 215),
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.symmetric(horizontal: isMobile ? 14 : (isTv ? 24 : 20), vertical: 6),
+                itemCount: (items.length > 10 ? 10 : items.length) + 1,
+                separatorBuilder: (context, index) => SizedBox(width: isTv ? 16 : 12),
+                itemBuilder: (context, index) {
+                  // 最后一个卡片是 "查看全部 >"
+                  if (index == (items.length > 10 ? 10 : items.length)) {
+                    return TvFocusable(
+                      onTap: () {
+                        if (key == 'live') {
+                          setState(() => _selectedTab = 'live');
+                        } else {
+                          _switchVodCategory(key, catName: title);
+                        }
+                      },
+                      builder: (context, isFocused) {
+                        return Container(
+                          width: isTv ? 175 : (isMobile ? 110 : 124),
+                          decoration: BoxDecoration(
+                            color: textColor.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(isTv ? 20 : 16),
+                            border: Border.all(color: textColor.withOpacity(0.15)),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(isTv ? 14 : 10),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: textColor.withOpacity(0.12),
+                                ),
+                                child: Icon(Icons.arrow_forward_rounded, color: textColor, size: isTv ? 26 : 20),
+                              ),
+                              SizedBox(height: isTv ? 12 : 8),
+                              Text(
+                                "查看全部",
+                                style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: isTv ? 16 : 13),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                "${items.length}+ 部",
+                                style: TextStyle(color: textColor.withOpacity(0.6), fontSize: isTv ? 12 : 10),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    );
+                  }
+
+                  final item = items[index];
+                  final posterUrl = item['poster']?.toString() ?? '';
+                  final isLive = key == 'live';
+
                   return TvFocusable(
-                    onTap: () {
-                      if (key == 'live') {
-                        setState(() => _selectedTab = 'live');
-                      } else {
-                        _switchVodCategory(key, catName: title);
-                      }
-                    },
+                    onTap: () => _playVideo(item['url'], item['title']),
                     builder: (context, isFocused) {
                       return Container(
-                        width: isMobile ? 110 : 124,
+                        width: isTv ? 175 : (isMobile ? 116 : 132),
                         decoration: BoxDecoration(
-                          color: textColor.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: textColor.withOpacity(0.15)),
+                          color: const Color(0xFF141824),
+                          borderRadius: BorderRadius.circular(isTv ? 20 : 16),
+                          border: Border.all(
+                            color: isFocused ? const Color(0xFFFFC83B) : Colors.black12,
+                            width: isFocused ? (isTv ? 3.5 : 2.5) : 1,
+                          ),
+                          boxShadow: isFocused
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFFFFC83B).withOpacity(0.55),
+                                    blurRadius: isTv ? 20 : 14,
+                                    spreadRadius: isTv ? 3 : 2,
+                                  ),
+                                ]
+                              : const [
+                                  BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 4)),
+                                ],
                         ),
+                        clipBehavior: Clip.antiAlias,
                         child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                color: textColor.withOpacity(0.12),
+                            Expanded(
+                              child: Stack(
+                                fit: StackFit.expand,
+                                children: [
+                                  isLive
+                                      ? Container(
+                                          color: const Color(0xFF1E293B),
+                                          child: Center(
+                                            child: Column(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Icon(Icons.tv_rounded, color: const Color(0xFF38BDF8), size: isTv ? 44 : 32),
+                                                const SizedBox(height: 4),
+                                                Text(item['logo'] ?? '直播', style: TextStyle(color: Colors.white70, fontSize: isTv ? 15 : 12, fontWeight: FontWeight.bold)),
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                      : _buildSafePosterImage(posterUrl, item),
+                                  Positioned(
+                                    top: isTv ? 8 : 6,
+                                    right: isTv ? 8 : 6,
+                                    child: Container(
+                                      padding: EdgeInsets.symmetric(horizontal: isTv ? 8 : 5, vertical: isTv ? 3 : 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.black.withOpacity(0.75),
+                                        borderRadius: BorderRadius.circular(isTv ? 8 : 6),
+                                      ),
+                                      child: Text(
+                                        isLive ? "LIVE 4K" : (item['score'] != null ? "⭐ ${item['score']}" : "4K 原画"),
+                                        style: TextStyle(color: const Color(0xFFFFD166), fontSize: isTv ? 11 : 9, fontWeight: FontWeight.w800),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
-                              child: Icon(Icons.arrow_forward_rounded, color: textColor, size: 20),
                             ),
-                            const SizedBox(height: 8),
-                            Text(
-                              "查看全部",
-                              style: TextStyle(color: textColor, fontWeight: FontWeight.bold, fontSize: 13),
-                            ),
-                            const SizedBox(height: 2),
-                            Text(
-                              "${items.length}+ 部",
-                              style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 10),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: isTv ? 10 : 8, vertical: isTv ? 8 : 6),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item['title'] ?? '',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(color: Colors.white, fontSize: isTv ? 15 : 12, fontWeight: FontWeight.bold),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    isLive ? (item['prog'] ?? '全天轮播') : (item['source'] ?? item['badge'] ?? '极速秒播'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(color: const Color(0xFF94A3B8), fontSize: isTv ? 12 : 10),
+                                  ),
+                                ],
+                              ),
                             ),
                           ],
                         ),
                       );
                     },
                   );
-                }
-
-                final item = items[index];
-                final posterUrl = item['poster']?.toString() ?? '';
-                final isLive = key == 'live';
-
-                return TvFocusable(
-                  onTap: () => _playVideo(item['url'], item['title']),
-                  builder: (context, isFocused) {
-                    return Container(
-                      width: isMobile ? 116 : 132,
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF141824),
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isFocused ? const Color(0xFF38BDF8) : Colors.black12,
-                          width: isFocused ? 2 : 1,
-                        ),
-                        boxShadow: const [
-                          BoxShadow(color: Color(0x33000000), blurRadius: 8, offset: Offset(0, 4)),
-                        ],
-                      ),
-                      clipBehavior: Clip.antiAlias,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                isLive
-                                    ? Container(
-                                        color: const Color(0xFF1E293B),
-                                        child: Center(
-                                          child: Column(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              const Icon(Icons.tv_rounded, color: Color(0xFF38BDF8), size: 32),
-                                              const SizedBox(height: 4),
-                                              Text(item['logo'] ?? '直播', style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold)),
-                                            ],
-                                          ),
-                                        ),
-                                      )
-                                    : _buildSafePosterImage(posterUrl, item),
-                                Positioned(
-                                  top: 6,
-                                  right: 6,
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: Colors.black.withOpacity(0.7),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: Text(
-                                      isLive ? "LIVE 4K" : (item['score'] != null ? "⭐ ${item['score']}" : "4K 原画"),
-                                      style: const TextStyle(color: Color(0xFFFFD166), fontSize: 9, fontWeight: FontWeight.w800),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  item['title'] ?? '',
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  isLive ? (item['prog'] ?? '全天轮播') : (item['source'] ?? item['badge'] ?? '极速秒播'),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 10),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                );
-              },
+                },
+              ),
             ),
+            secondChild: const SizedBox(width: double.infinity, height: 6),
           ),
-          secondChild: const SizedBox(width: double.infinity, height: 6),
-        ),
-        if (isExpanded) const SizedBox(height: 10),
-      ],
-    ),
-  );
-}
+          if (isExpanded) SizedBox(height: isTv ? 16 : 10),
+        ],
+      ),
+    );
+  }
 
   Widget _buildPosterFallbackCard(Map<String, dynamic> item, {bool isLoading = false}) {
     final cat = item['cat']?.toString() ?? 'movie';
@@ -2754,27 +2795,37 @@ class _TvDashboardViewState extends State<TvDashboardView> {
 
   /// 手机版专属顶部搜索与快捷聚合推荐栏
   Widget _buildMobileSearchBar() {
+    final theme = ThemePreset.getByKey(_currentThemeKey);
+    final isLight = theme.isLight;
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF1B202D),
+        color: isLight ? Colors.white.withOpacity(0.9) : const Color(0xFF1B202D),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withOpacity(0.12)),
+        border: Border.all(color: isLight ? theme.cardBorder : Colors.white.withOpacity(0.12)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isLight ? 0.04 : 0.2),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.search_rounded, color: Color(0xFF38BDF8), size: 20),
+              const Icon(Icons.search_rounded, color: Color(0xFF1860FF), size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: TextField(
-                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  style: TextStyle(color: theme.textColor, fontSize: 14),
                   decoration: InputDecoration(
-                    hintText: '搜索海量电影、电视剧、综艺...',
-                    hintStyle: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13),
+                    hintText: '搜索海量电影、电视剧、动漫、综艺...',
+                    hintStyle: TextStyle(color: theme.secondaryTextColor.withOpacity(0.6), fontSize: 13),
                     isDense: true,
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.zero,
@@ -2798,7 +2849,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
               if (_searchQuery.isNotEmpty)
                 GestureDetector(
                   onTap: () => setState(() => _searchQuery = ''),
-                  child: Icon(Icons.close, color: Colors.white.withOpacity(0.6), size: 18),
+                  child: Icon(Icons.close, color: theme.secondaryTextColor, size: 18),
                 ),
             ],
           ),
@@ -2808,7 +2859,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
-                Text("热门: ", style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.45))),
+                Text("热门: ", style: TextStyle(fontSize: 11, color: theme.secondaryTextColor)),
                 ...['三体', '狂飙', '流浪地球', '繁花', '庆余年', '鬼灭之刃', '封神'].map((kw) {
                   return GestureDetector(
                     onTap: () async {
@@ -2826,10 +2877,17 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                       margin: const EdgeInsets.only(right: 6),
                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.08),
+                        color: isLight ? theme.textColor.withOpacity(0.06) : Colors.white.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(kw, style: const TextStyle(fontSize: 11, color: Color(0xFF38BDF8))),
+                      child: Text(
+                        kw,
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isLight ? const Color(0xFF1860FF) : const Color(0xFF38BDF8),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   );
                 }).toList(),
@@ -3790,23 +3848,39 @@ decoration: BoxDecoration(
   // ==================== 右侧面板：分类搜索 + 热门海报墙 ====================
 
   /// 分类搜索卡片 - 替代原来的投屏功能
-  Widget _buildCategorySearchCard() {
+  Widget _buildCategorySearchCard({bool isTv = false}) {
+    final theme = ThemePreset.getByKey(_currentThemeKey);
+    final isLight = theme.isLight;
+
     return Container(
-      padding: const EdgeInsets.all(18),
-decoration: BoxDecoration(
-          color: const Color(0xFF1E2128),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.15)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))],
-        ),
+      padding: EdgeInsets.all(isTv ? 22 : 18),
+      decoration: BoxDecoration(
+        color: isLight ? Colors.white.withOpacity(0.88) : const Color(0xFF1E2128),
+        borderRadius: BorderRadius.circular(isTv ? 28 : 24),
+        border: Border.all(color: isLight ? theme.cardBorder : Colors.white.withOpacity(0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isLight ? 0.05 : 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.category, color: Color(0xFF1860FF), size: 20),
-              SizedBox(width: 8),
-              Text("🎬 分类搜索", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFFF0F0F0))),
+            children: [
+              Icon(Icons.category, color: const Color(0xFF1860FF), size: isTv ? 24 : 20),
+              const SizedBox(width: 8),
+              Text(
+                "🎬 分类搜索",
+                style: TextStyle(
+                  fontSize: isTv ? 18 : 15,
+                  fontWeight: FontWeight.w800,
+                  color: theme.textColor,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -3817,14 +3891,19 @@ decoration: BoxDecoration(
               return Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: isFocused ? Colors.white : Colors.white.withOpacity(0.7),
+                  color: isFocused
+                      ? Colors.white
+                      : (isLight ? const Color(0xFFF1F3F5) : Colors.white.withOpacity(0.7)),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: isFocused ? const Color(0xFF1860FF) : const Color(0xFFE2E8F0), width: isFocused ? 2 : 1),
+                  border: Border.all(
+                    color: isFocused ? const Color(0xFF1860FF) : (isLight ? theme.cardBorder : const Color(0xFFE2E8F0)),
+                    width: isFocused ? 2 : 1,
+                  ),
                   boxShadow: isFocused ? const [BoxShadow(color: Color(0x331860FF), blurRadius: 12)] : null,
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.search, color: Color(0xFF647087), size: 16),
+                    Icon(Icons.search, color: isLight ? theme.secondaryTextColor : const Color(0xFF647087), size: 16),
                     const SizedBox(width: 8),
                     Expanded(
                       child: TextField(
@@ -3834,9 +3913,14 @@ decoration: BoxDecoration(
                             if (_selectedTab != 'vod') _selectedTab = 'vod';
                           });
                         },
+                        style: TextStyle(color: theme.textColor, fontSize: 13),
                         decoration: InputDecoration(
                           hintText: _searchQuery.isEmpty ? "搜索影视..." : _searchQuery,
-                          hintStyle: TextStyle(color: _searchQuery.isEmpty ? const Color(0xFF94A3B8) : const Color(0xFF131722), fontSize: 12, fontWeight: FontWeight.w600),
+                          hintStyle: TextStyle(
+                            color: _searchQuery.isEmpty ? theme.secondaryTextColor : theme.textColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
                           border: InputBorder.none,
                           isDense: true,
                         ),
@@ -3845,7 +3929,7 @@ decoration: BoxDecoration(
                     if (_searchQuery.isNotEmpty)
                       GestureDetector(
                         onTap: () => setState(() => _searchQuery = ''),
-                        child: const Icon(Icons.close, color: Color(0xFF647087), size: 16),
+                        child: Icon(Icons.close, color: theme.secondaryTextColor, size: 16),
                       ),
                   ],
                 ),
@@ -3858,17 +3942,17 @@ decoration: BoxDecoration(
             spacing: 8,
             runSpacing: 8,
             children: [
-              _buildQuickCategoryChip("🔥 热门", "all"),
-              _buildQuickCategoryChip("🎬 电影", "movie"),
-              _buildQuickCategoryChip("📺 电视剧", "tv"),
-              _buildQuickCategoryChip("🎌 动漫", "anime"),
-              _buildQuickCategoryChip("🎤 综艺", "variety"),
-              _buildQuickCategoryChip("📖 纪录片", "documentary"),
+              _buildQuickCategoryChip("🔥 热门", "all", isTv: isTv),
+              _buildQuickCategoryChip("🎬 电影", "movie", isTv: isTv),
+              _buildQuickCategoryChip("📺 电视剧", "tv", isTv: isTv),
+              _buildQuickCategoryChip("🎌 动漫", "anime", isTv: isTv),
+              _buildQuickCategoryChip("🎤 综艺", "variety", isTv: isTv),
+              _buildQuickCategoryChip("📖 纪录片", "documentary", isTv: isTv),
             ],
           ),
           const SizedBox(height: 10),
           // 热门搜索标签
-          const Text("热门搜索", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF647087))),
+          Text("热门搜索", style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: theme.secondaryTextColor)),
           const SizedBox(height: 8),
           Wrap(
             spacing: 6,
@@ -3880,11 +3964,19 @@ decoration: BoxDecoration(
                 child: Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: isSelected ? const Color(0xFF1860FF) : Colors.white.withOpacity(0.5),
+                    color: isSelected
+                        ? const Color(0xFF1860FF)
+                        : (isLight ? const Color(0xFFF1F3F5) : Colors.white.withOpacity(0.5)),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Text(tag, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600,
-                    color: isSelected ? Colors.white : const Color(0xFF475569))),
+                  child: Text(
+                    tag,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: isSelected ? Colors.white : theme.textColor,
+                    ),
+                  ),
                 ),
               );
             }).toList(),
@@ -3894,8 +3986,11 @@ decoration: BoxDecoration(
     );
   }
 
-  Widget _buildQuickCategoryChip(String label, String catKey) {
+  Widget _buildQuickCategoryChip(String label, String catKey, {bool isTv = false}) {
+    final theme = ThemePreset.getByKey(_currentThemeKey);
+    final isLight = theme.isLight;
     final isSel = _vodCategory == catKey;
+
     return TvFocusable(
       onTap: () {
         setState(() {
@@ -3905,45 +4000,71 @@ decoration: BoxDecoration(
         _triggerToast("已切换到: $label");
       },
       builder: (context, isFocused) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: isTv ? 18 : 14, vertical: isTv ? 9 : 7),
         decoration: BoxDecoration(
-          color: isFocused || isSel ? const Color(0xFF1860FF) : Colors.white.withOpacity(0.82),
+          color: isFocused || isSel
+              ? const Color(0xFF1860FF)
+              : (isLight ? const Color(0xFFF1F3F5) : Colors.white.withOpacity(0.82)),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSel ? const Color(0xFF1860FF) : Colors.white.withOpacity(0.9), width: isSel ? 2 : 1),
+          border: Border.all(
+            color: isSel ? const Color(0xFF1860FF) : (isLight ? theme.cardBorder : Colors.white.withOpacity(0.9)),
+            width: isSel ? 2 : 1,
+          ),
           boxShadow: isFocused || isSel
             ? [BoxShadow(color: const Color(0xFF1860FF).withOpacity(0.4), blurRadius: 12, spreadRadius: 2)]
-            : [BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 6)],
+            : [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 4)],
         ),
-        child: Text(label, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800,
-          color: isFocused || isSel ? Colors.white : const Color(0xFF1A1D29))),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: isTv ? 14 : 12,
+            fontWeight: FontWeight.w800,
+            color: isFocused || isSel ? Colors.white : theme.textColor,
+          ),
+        ),
       ),
     );
   }
 
   /// 热门海报墙 - 替代原来的投屏，显示热门推荐
-  Widget _buildHotPosterWall() {
+  Widget _buildHotPosterWall({bool isTv = false}) {
+    final theme = ThemePreset.getByKey(_currentThemeKey);
+    final isLight = theme.isLight;
     // 取前6个热门内容作为小海报墙
     final hotItems = _vodList.length > 6 ? _vodList.sublist(0, 6) : _vodList;
 
     return Container(
-      padding: const EdgeInsets.all(18),
-decoration: BoxDecoration(
-          color: const Color(0xFF1E2128),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.15)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))],
-        ),
+      padding: EdgeInsets.all(isTv ? 22 : 18),
+      decoration: BoxDecoration(
+        color: isLight ? Colors.white.withOpacity(0.88) : const Color(0xFF1E2128),
+        borderRadius: BorderRadius.circular(isTv ? 28 : 24),
+        border: Border.all(color: isLight ? theme.cardBorder : Colors.white.withOpacity(0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isLight ? 0.05 : 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.local_fire_department, color: Color(0xFFFF6B35), size: 20),
-                  SizedBox(width: 8),
-                  Text("🔥 热门海报墙", style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: Color(0xFFF0F0F0))),
+                  const Icon(Icons.local_fire_department, color: Color(0xFFFF6B35), size: 20),
+                  const SizedBox(width: 8),
+                  Text(
+                    "🔥 热门海报墙",
+                    style: TextStyle(
+                      fontSize: isTv ? 18 : 15,
+                      fontWeight: FontWeight.w800,
+                      color: theme.textColor,
+                    ),
+                  ),
                 ],
               ),
               TvFocusable(
@@ -3954,14 +4075,22 @@ decoration: BoxDecoration(
                 builder: (context, isFocused) => Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: isFocused ? const Color(0xFF1860FF) : Colors.white.withOpacity(0.3),
+                    color: isFocused
+                        ? const Color(0xFF1860FF)
+                        : (isLight ? const Color(0xFFF1F3F5) : Colors.white.withOpacity(0.3)),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.refresh, size: 12, color: isFocused ? Colors.white : const Color(0xFF647087)),
+                    Icon(Icons.refresh, size: 12, color: isFocused ? Colors.white : theme.secondaryTextColor),
                     const SizedBox(width: 4),
-                    Text("刷新", style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700,
-                      color: isFocused ? Colors.white : const Color(0xFF647087))),
+                    Text(
+                      "刷新",
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: isFocused ? Colors.white : theme.secondaryTextColor,
+                      ),
+                    ),
                   ]),
                 ),
               ),
@@ -3976,10 +4105,10 @@ decoration: BoxDecoration(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.movie_outlined, size: 32, color: Colors.grey[500]),
+                    Icon(Icons.movie_outlined, size: 32, color: theme.secondaryTextColor),
                     const SizedBox(height: 8),
                     Text("暂无内容\n点击源加载或刷新", textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                      style: TextStyle(fontSize: 12, color: theme.secondaryTextColor)),
                   ],
                 ),
               ),
@@ -3988,11 +4117,11 @@ decoration: BoxDecoration(
             GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 3,
                 childAspectRatio: 0.62,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
+                crossAxisSpacing: isTv ? 12 : 8,
+                mainAxisSpacing: isTv ? 12 : 8,
               ),
               itemCount: hotItems.length,
               itemBuilder: (context, index) {
@@ -4006,13 +4135,13 @@ decoration: BoxDecoration(
                   builder: (context, isFocused) {
                     return Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
+                        borderRadius: BorderRadius.circular(isTv ? 16 : 14),
                         border: Border.all(
-                          color: isFocused ? const Color(0xFF1860FF) : Colors.transparent,
-                          width: isFocused ? 2 : 1,
+                          color: isFocused ? const Color(0xFFFFC83B) : Colors.transparent,
+                          width: isFocused ? (isTv ? 3 : 2) : 1,
                         ),
                         boxShadow: isFocused
-                            ? const [BoxShadow(color: Color(0x401860FF), blurRadius: 12)]
+                            ? [BoxShadow(color: const Color(0xFFFFC83B).withOpacity(0.5), blurRadius: 12)]
                             : null,
                       ),
                       clipBehavior: Clip.hardEdge,
@@ -4028,7 +4157,7 @@ decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   begin: Alignment.topCenter,
                                   end: Alignment.bottomCenter,
-                                  colors: [Colors.transparent, Colors.black.withOpacity(0.75)],
+                                  colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
                                 ),
                               ),
                             ),
@@ -4039,8 +4168,8 @@ decoration: BoxDecoration(
                               top: 4,
                               left: 4,
                               child: Container(
-                                width: 22,
-                                height: 22,
+                                width: isTv ? 26 : 22,
+                                height: isTv ? 26 : 22,
                                 decoration: BoxDecoration(
                                   gradient: index == 0
                                       ? const LinearGradient(colors: [Color(0xFFFFD700), Color(0xFFFFA500)])
@@ -4051,7 +4180,7 @@ decoration: BoxDecoration(
                                   boxShadow: const [BoxShadow(color: Colors.black38, blurRadius: 3)],
                                 ),
                                 alignment: Alignment.center,
-                                child: Text('${index + 1}', style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w900, color: Colors.white)),
+                                child: Text('${index + 1}', style: TextStyle(fontSize: isTv ? 12 : 10, fontWeight: FontWeight.w900, color: Colors.white)),
                               ),
                             ),
                           // 底部信息
@@ -4060,14 +4189,14 @@ decoration: BoxDecoration(
                             right: 0,
                             bottom: 0,
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(6, 16, 6, 6),
+                              padding: EdgeInsets.fromLTRB(isTv ? 8 : 6, 16, isTv ? 8 : 6, isTv ? 8 : 6),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   Text(
                                     item['title'] ?? '',
-                                    style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.white),
+                                    style: TextStyle(fontSize: isTv ? 12 : 10, fontWeight: FontWeight.w800, color: Colors.white),
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
@@ -4075,8 +4204,8 @@ decoration: BoxDecoration(
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      Text("${item['year'] ?? ''}", style: const TextStyle(fontSize: 8, color: Colors.white70)),
-                                      Text("★ ${item['score'] ?? ''}", style: const TextStyle(fontSize: 8, fontWeight: FontWeight.bold, color: Color(0xFFFFEAA5))),
+                                      Text("${item['year'] ?? ''}", style: TextStyle(fontSize: isTv ? 10 : 8, color: Colors.white70)),
+                                      Text("★ ${item['score'] ?? ''}", style: TextStyle(fontSize: isTv ? 10 : 8, fontWeight: FontWeight.bold, color: const Color(0xFFFFEAA5))),
                                     ],
                                   ),
                                 ],
@@ -4105,38 +4234,57 @@ decoration: BoxDecoration(
     );
   }
 
-  Widget _buildTvQrSearchCard() {
+  Widget _buildTvQrSearchCard({bool isTv = false}) {
+    final theme = ThemePreset.getByKey(_currentThemeKey);
+    final isLight = theme.isLight;
+
     return Container(
-        padding: const EdgeInsets.all(20),
-decoration: BoxDecoration(
-          color: const Color(0xFF1E2128),
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withOpacity(0.15)),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 8))],
-        ),
+      padding: EdgeInsets.all(isTv ? 24 : 20),
+      decoration: BoxDecoration(
+        color: isLight ? Colors.white.withOpacity(0.88) : const Color(0xFF1E2128),
+        borderRadius: BorderRadius.circular(isTv ? 28 : 24),
+        border: Border.all(color: isLight ? theme.cardBorder : Colors.white.withOpacity(0.15)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isLight ? 0.05 : 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(Icons.qr_code_scanner, color: Color(0xFF1860FF), size: 22),
-              SizedBox(width: 8),
-              Text("扫码搜索与控制", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFFF0F0F0))),
+            children: [
+              const Icon(Icons.qr_code_scanner, color: Color(0xFF1860FF), size: 22),
+              const SizedBox(width: 8),
+              Text(
+                "扫码搜索与控制",
+                style: TextStyle(
+                  fontSize: isTv ? 19 : 16,
+                  fontWeight: FontWeight.w800,
+                  color: theme.textColor,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 14),
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: Colors.white.withOpacity(0.15)),
+              border: Border.all(color: isLight ? theme.cardBorder : Colors.white.withOpacity(0.15)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 8),
+              ],
             ),
             child: QrImageView(
               data: widget.lanServer.serverUrl,
               version: QrVersions.auto,
-              size: 160.0,
+              size: isTv ? 180.0 : 150.0,
               backgroundColor: Colors.white,
             ),
           ),
@@ -4146,10 +4294,10 @@ decoration: BoxDecoration(
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w800, color: Color(0xFF1860FF)),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             "手机微信/浏览器扫码，手机键盘输入文字、剧名搜索、推送接口与投屏",
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 11, color: Color(0xFF94A3B8), height: 1.4),
+            style: TextStyle(fontSize: 11, color: theme.secondaryTextColor, height: 1.4),
           ),
         ],
       ),
@@ -4210,28 +4358,36 @@ decoration: BoxDecoration(
     );
   }
 
-  /// 📱 竖屏手机专属包豪斯终端布局 (上部 16:9 极清画质，下部复古黑胶弧形控制台)
+  /// 📱 竖屏手机专属现代影院终端布局 (上部 16:9 极清画质带快捷全屏，下部与主题浑然一体的剧集详情与交互中控)
   Widget _buildPortraitMobilePlayerLayout(BoxConstraints constraints) {
     final curSec = _videoPosition.inSeconds.toDouble();
     final totalSec = _videoDuration.inSeconds.toDouble();
     final progress = (totalSec > 0) ? (curSec / totalSec).clamp(0.0, 1.0) : 0.0;
     final isPlaying = _videoController?.value.isPlaying ?? false;
+    final theme = ThemePreset.getByKey(_currentThemeKey);
+    final isLight = theme.isLight;
 
     return Container(
-      color: const Color(0xFF0F1116),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: _currentThemeColors,
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
       child: SafeArea(
-        bottom: false,
+        bottom: true,
         child: Column(
           children: [
-            // 1. 上半部分：16:9 视频播放视口
+            // 1. 上半部分：16:9 视频播放视口 (包含横屏全屏快捷按钮)
             Container(
               margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
               decoration: BoxDecoration(
                 color: Colors.black,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: const Color(0x33F59E0B), width: 1.2),
-                boxShadow: const [
-                  BoxShadow(color: Color(0x77000000), blurRadius: 18, offset: Offset(0, 6)),
+                border: Border.all(color: const Color(0xFFFFC83B), width: 1.2),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withOpacity(0.35), blurRadius: 16, offset: const Offset(0, 6)),
                 ],
               ),
               child: ClipRRect(
@@ -4248,81 +4404,176 @@ decoration: BoxDecoration(
                       if (_isPlayerBuffering || _videoController == null || !_videoController!.value.isInitialized)
                         _buildBufferingOverlay(),
 
-                      // 顶部微缩与画中画悬浮栏
+                      // 触摸响应层 (轻触切换控制条显示)
+                      GestureDetector(
+                        behavior: HitTestBehavior.translucent,
+                        onTap: () {
+                          setState(() => _showPlayerControls = !_showPlayerControls);
+                          if (_showPlayerControls) _resetControlsTimer();
+                        },
+                      ),
+
+                      // 顶部微缩、横屏与画中画悬浮栏
                       Positioned(
                         top: 0,
                         left: 0,
                         right: 0,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [Colors.black.withOpacity(0.75), Colors.transparent],
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: _showPlayerControls ? 1.0 : 0.0,
+                          child: IgnorePointer(
+                            ignoring: !_showPlayerControls,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [Colors.black.withOpacity(0.8), Colors.transparent],
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  // 缩小至底部条
+                                  GestureDetector(
+                                    onTap: () {
+                                      setState(() {
+                                        _playerDisplayMode = PlayerDisplayMode.mini;
+                                        _showEpisodeDrawer = false;
+                                        _showSettingsDrawer = false;
+                                      });
+                                      _triggerToast("已转入小窗口 · 可在主页继续搜索");
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 20),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // 标题
+                                  Expanded(
+                                    child: Text(
+                                      _playerTitle,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  // 一键横屏全屏 (核心体验)
+                                  GestureDetector(
+                                    onTap: () {
+                                      SystemChrome.setPreferredOrientations([
+                                        DeviceOrientation.landscapeLeft,
+                                        DeviceOrientation.landscapeRight,
+                                      ]);
+                                    },
+                                    child: Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFFFC83B),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: const [
+                                          Icon(Icons.fullscreen_rounded, color: Color(0xFF1E1B18), size: 16),
+                                          SizedBox(width: 2),
+                                          Text("全屏", style: TextStyle(color: Color(0xFF1E1B18), fontSize: 11, fontWeight: FontWeight.bold)),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  // 关闭退出
+                                  GestureDetector(
+                                    onTap: _closePlayer,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white.withOpacity(0.2),
+                                        shape: BoxShape.circle,
+                                      ),
+                                      child: const Icon(Icons.close_rounded, color: Colors.white, size: 18),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          child: Row(
-                            children: [
-                              // 缩小至底部条
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _playerDisplayMode = PlayerDisplayMode.mini;
-                                    _showEpisodeDrawer = false;
-                                    _showSettingsDrawer = false;
-                                  });
-                                  _triggerToast("已转入小窗口 · 可在主页继续搜索");
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.18),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 20),
+                        ),
+                      ),
+
+                      // 底部视频播放控制与时间进度滑块
+                      Positioned(
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        child: AnimatedOpacity(
+                          duration: const Duration(milliseconds: 200),
+                          opacity: _showPlayerControls ? 1.0 : 0.0,
+                          child: IgnorePointer(
+                            ignoring: !_showPlayerControls,
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.bottomCenter,
+                                  end: Alignment.topCenter,
+                                  colors: [Colors.black.withOpacity(0.85), Colors.transparent],
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              // 系统画中画
-                              GestureDetector(
-                                onTap: _startSystemPip,
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.18),
-                                    shape: BoxShape.circle,
+                              child: Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: _togglePlayPause,
+                                    child: Icon(
+                                      isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                      color: const Color(0xFFFFC83B),
+                                      size: 26,
+                                    ),
                                   ),
-                                  child: const Icon(Icons.picture_in_picture_alt_rounded, color: Color(0xFFF59E0B), size: 17),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              // 标题
-                              Expanded(
-                                child: Text(
-                                  _playerTitle,
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w800,
-                                    color: Color(0xFFFFFDF7),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    _formatDuration(_videoPosition),
+                                    style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                   ),
-                                ),
-                              ),
-                              // 退出
-                              GestureDetector(
-                                onTap: _closePlayer,
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white.withOpacity(0.18),
-                                    shape: BoxShape.circle,
+                                  Expanded(
+                                    child: SliderTheme(
+                                      data: SliderTheme.of(context).copyWith(
+                                        trackHeight: 3,
+                                        thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
+                                        activeTrackColor: const Color(0xFFFFC83B),
+                                        inactiveTrackColor: Colors.white24,
+                                        thumbColor: const Color(0xFFFFC83B),
+                                      ),
+                                      child: Slider(
+                                        value: progress,
+                                        onChanged: (val) {
+                                          if (totalSec > 0) {
+                                            final target = Duration(seconds: (val * totalSec).toInt());
+                                            _videoController?.seekTo(target);
+                                            setState(() => _videoPosition = target);
+                                          }
+                                        },
+                                      ),
+                                    ),
                                   ),
-                                  child: const Icon(Icons.close_rounded, color: Colors.white70, size: 18),
-                                ),
+                                  Text(
+                                    _formatDuration(_videoDuration),
+                                    style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 10),
+                                  ),
+                                ],
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ),
@@ -4332,222 +4583,295 @@ decoration: BoxDecoration(
               ),
             ),
 
-            // 2. 下半部分：包豪斯复古控制面板 (参考图2质感还原)
+            // 2. 下半部分：与主题浑然一体的现代剧集详情与交互中控台 (彻底告别单调灰底)
             Expanded(
               child: Container(
                 margin: const EdgeInsets.fromLTRB(10, 4, 10, 8),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Color(0xFF1E212B),
-                      Color(0xFF14161F),
-                      Color(0xFF0E1015),
-                    ],
+                  color: isLight ? Colors.white.withOpacity(0.92) : const Color(0xFF161922),
+                  borderRadius: BorderRadius.circular(26),
+                  border: Border.all(
+                    color: isLight ? theme.cardBorder : Colors.white.withOpacity(0.12),
                   ),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(color: const Color(0x33F59E0B), width: 1.2),
-                  boxShadow: const [
-                    BoxShadow(color: Color(0x66000000), blurRadius: 24, offset: Offset(0, 10)),
-                    BoxShadow(color: Color(0x22F59E0B), blurRadius: 16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isLight ? 0.05 : 0.3),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
                   ],
                 ),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(28),
+                  borderRadius: BorderRadius.circular(25),
                   child: Stack(
                     children: [
-                      SingleChildScrollView(
+                      ListView(
                         physics: const BouncingScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-                        child: Column(
-                          children: [
-                            // 顶部状态栏：播放中指示 + 网速情况 (绝不展示任何爬虫源名字)
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Row(
+                        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                        children: [
+                          // 顶部状态栏：影片标题与实时网速指示
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Container(
-                                      width: 8,
-                                      height: 8,
-                                      decoration: const BoxDecoration(
-                                        shape: BoxShape.circle,
-                                        color: Color(0xFFF59E0B),
-                                        boxShadow: [
-                                          BoxShadow(color: Color(0xFFF59E0B), blurRadius: 8, spreadRadius: 1),
-                                        ],
+                                    Text(
+                                      _playerTitle,
+                                      style: TextStyle(
+                                        fontSize: 17,
+                                        fontWeight: FontWeight.w900,
+                                        color: theme.textColor,
+                                        letterSpacing: -0.3,
                                       ),
                                     ),
-                                    const SizedBox(width: 7),
-                                    const Text(
-                                      "正在播放",
-                                      style: TextStyle(
-                                        color: Color(0xFFFFFDF7),
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 0.5,
-                                      ),
+                                    const SizedBox(height: 6),
+                                    Row(
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2.5),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFFC83B).withOpacity(0.18),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            "⚡ ${_networkSpeedMbps.toStringAsFixed(1)} MB/s",
+                                            style: const TextStyle(
+                                              color: Color(0xFFE5A000),
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w900,
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 6),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2.5),
+                                          decoration: BoxDecoration(
+                                            color: isLight ? Colors.black.withOpacity(0.06) : Colors.white.withOpacity(0.1),
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            "4K 极清秒播",
+                                            style: TextStyle(
+                                              color: theme.secondaryTextColor,
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ],
                                 ),
-                                // 实时网络速度监测徽章
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0x22F59E0B),
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(color: const Color(0x44F59E0B)),
-                                  ),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      const Icon(Icons.bolt_rounded, color: Color(0xFFFFC83B), size: 14),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        "⚡ ${_networkSpeedMbps.toStringAsFixed(1)} MB/s",
-                                        style: const TextStyle(
-                                          color: Color(0xFFFFFDF7),
-                                          fontSize: 11,
-                                          fontWeight: FontWeight.w800,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
+                              ),
+                            ],
+                          ),
 
-                            const SizedBox(height: 8),
+                          const SizedBox(height: 12),
 
-                            // 选集快捷水平滑条 (用户可直接在屏幕上选择第几集，立即播放！)
-                            _buildQuickEpisodePicker(),
-
-                            const SizedBox(height: 6),
-
-                            // 弧形音量/进度表盘 (复刻图2大圆弧刻度与数值)
-                            BauhausArcDialWidget(
-                              value: _arcControlsVolume ? _currentVolume : progress,
-                              isVolume: _arcControlsVolume,
-                              titleText: _arcControlsVolume ? "音量调节" : "播放进度",
-                              readoutText: _arcControlsVolume
-                                  ? "${(_currentVolume * 100).toInt()}%"
-                                  : "${_formatDuration(_videoPosition)} / ${_formatDuration(_videoDuration)}",
-                              onChanged: (val) {
-                                if (_arcControlsVolume) {
-                                  _setPlayerVolume(val);
-                                } else {
-                                  if (totalSec > 0) {
-                                    final target = Duration(seconds: (val * totalSec).toInt());
-                                    _videoController?.seekTo(target);
-                                    setState(() => _videoPosition = target);
-                                  }
-                                }
-                              },
-                              onToggleMode: _toggleArcMode,
-                              height: 160,
-                            ),
-
-                            const SizedBox(height: 14),
-
-                            // 核心三联钮：[左音量] [中间复古包豪斯唱盘大按钮] [右选集]
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              crossAxisAlignment: CrossAxisAlignment.center,
+                          // 快捷操作胶囊栏 (横屏影院、换线、倍速、画中画)
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            physics: const BouncingScrollPhysics(),
+                            child: Row(
                               children: [
-                                // 左：静音/音量快速切换
-                                _buildBauhausSidePodButton(
-                                  icon: _currentVolume > 0.01 ? Icons.volume_up_rounded : Icons.volume_off_rounded,
-                                  label: _currentVolume > 0.01 ? "${(_currentVolume * 100).toInt()}%" : "静音",
-                                  iconColor: _currentVolume > 0.01 ? const Color(0xFFFFFDF7) : const Color(0xFFFFC83B),
-                                  onTap: _toggleMute,
+                                // 一键横屏影院
+                                GestureDetector(
+                                  onTap: () {
+                                    SystemChrome.setPreferredOrientations([
+                                      DeviceOrientation.landscapeLeft,
+                                      DeviceOrientation.landscapeRight,
+                                    ]);
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFC83B),
+                                      borderRadius: BorderRadius.circular(16),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: const [
+                                        Icon(Icons.crop_rotate_rounded, color: Color(0xFF1E1B18), size: 15),
+                                        SizedBox(width: 4),
+                                        Text("横屏影院", style: TextStyle(color: Color(0xFF1E1B18), fontSize: 12, fontWeight: FontWeight.bold)),
+                                      ],
+                                    ),
+                                  ),
                                 ),
-
-                                // 中：包豪斯双层同心唱盘播放/暂停核心大按钮 (图2 精髓)
-                                _buildBauhausCenterDisc(
-                                  isPlaying: isPlaying,
-                                  onTap: _togglePlayPause,
-                                ),
-
-                                // 右：分集抽屉 (显示分集数)
-                                _buildBauhausSidePodButton(
-                                  icon: Icons.format_list_bulleted_rounded,
-                                  label: "选集(${_currentEpisodes.isNotEmpty ? _currentEpisodes.length : 1})",
-                                  isActive: _showEpisodeDrawer,
+                                const SizedBox(width: 8),
+                                // 换线
+                                GestureDetector(
                                   onTap: () {
                                     setState(() {
-                                      _showEpisodeDrawer = !_showEpisodeDrawer;
-                                      _showSettingsDrawer = false;
+                                      _showSettingsDrawer = !_showSettingsDrawer;
+                                      _showEpisodeDrawer = false;
                                     });
                                   },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      color: isLight ? Colors.black.withOpacity(0.06) : Colors.white.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: isLight ? theme.cardBorder : Colors.white12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.alt_route_rounded, color: theme.textColor, size: 15),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "换线 (${_alternativeSources.isNotEmpty ? _alternativeSources.length : 1})",
+                                          style: TextStyle(color: theme.textColor, fontSize: 12, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // 倍速
+                                GestureDetector(
+                                  onTap: _togglePlaybackSpeed,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      color: isLight ? Colors.black.withOpacity(0.06) : Colors.white.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: isLight ? theme.cardBorder : Colors.white12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.speed_rounded, color: theme.textColor, size: 15),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "${_playbackSpeed}x",
+                                          style: TextStyle(color: theme.textColor, fontSize: 12, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // 画中画
+                                GestureDetector(
+                                  onTap: _startSystemPip,
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                                    decoration: BoxDecoration(
+                                      color: isLight ? Colors.black.withOpacity(0.06) : Colors.white.withOpacity(0.08),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(color: isLight ? theme.cardBorder : Colors.white12),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.picture_in_picture_alt_rounded, color: theme.textColor, size: 15),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          "画中画",
+                                          style: TextStyle(color: theme.textColor, fontSize: 12, fontWeight: FontWeight.bold),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
                                 ),
                               ],
                             ),
+                          ),
 
-                            const SizedBox(height: 16),
+                          const SizedBox(height: 16),
 
-                            // 下方快捷胶囊操作栏 (风格统一，不溢出，横向自适应)
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
-                              physics: const BouncingScrollPhysics(),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
+                          // 选集列表核心区块 (直观、清晰、可点击换集)
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Row(
                                 children: [
-                                  // 快退 10s
-                                  _buildBauhausSecondaryPill(
-                                    icon: Icons.replay_10_rounded,
-                                    label: "-10s",
-                                    onTap: () => _seekRelative(-10),
+                                  Container(
+                                    width: 3.5,
+                                    height: 15,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFC83B),
+                                      borderRadius: BorderRadius.circular(2),
+                                    ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  // 快进 10s
-                                  _buildBauhausSecondaryPill(
-                                    icon: Icons.forward_10_rounded,
-                                    label: "+10s",
-                                    onTap: () => _seekRelative(10),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // 倍速
-                                  _buildBauhausSecondaryPill(
-                                    icon: Icons.speed_rounded,
-                                    label: "${_playbackSpeed}x",
-                                    isHighlight: _playbackSpeed != 1.0,
-                                    onTap: _togglePlaybackSpeed,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // 画面比例
-                                  _buildBauhausSecondaryPill(
-                                    icon: Icons.aspect_ratio_rounded,
-                                    label: _aspectRatioMode == 'contain'
-                                        ? "自适应"
-                                        : (_aspectRatioMode == '16:9' ? "16:9" : "铺满"),
-                                    onTap: _toggleAspectRatio,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // 极速线路切换 (绝不写爬虫源名字，只写线路1/2/3)
-                                  _buildBauhausSecondaryPill(
-                                    icon: Icons.alt_route_rounded,
-                                    label: "换线 (${_alternativeSources.isNotEmpty ? _alternativeSources.length : 1})",
-                                    isHighlight: _showSettingsDrawer,
-                                    onTap: () {
-                                      setState(() {
-                                        _showSettingsDrawer = !_showSettingsDrawer;
-                                        _showEpisodeDrawer = false;
-                                      });
-                                    },
-                                  ),
-                                  const SizedBox(width: 8),
-                                  // 系统画中画
-                                  _buildBauhausSecondaryPill(
-                                    icon: Icons.picture_in_picture_alt_rounded,
-                                    label: "画中画",
-                                    onTap: _startSystemPip,
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    "选集 (${_currentEpisodes.isNotEmpty ? _currentEpisodes.length : 1})",
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                      color: theme.textColor,
+                                    ),
                                   ),
                                 ],
                               ),
+                              if (_currentEpisodes.isNotEmpty)
+                                Text(
+                                  "当前: 第 ${_currentEpisodeIndex + 1} 集",
+                                  style: TextStyle(fontSize: 11, color: theme.secondaryTextColor),
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          _buildQuickEpisodePicker(),
+
+                          const SizedBox(height: 16),
+
+                          // 核心播放控制中控台 (快退、播放、快进、音量)
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: isLight ? Colors.black.withOpacity(0.03) : Colors.white.withOpacity(0.04),
+                              borderRadius: BorderRadius.circular(18),
+                              border: Border.all(color: isLight ? theme.cardBorder : Colors.white10),
                             ),
-                          ],
-                        ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              children: [
+                                IconButton(
+                                  icon: const Icon(Icons.replay_10_rounded),
+                                  color: theme.textColor,
+                                  iconSize: 24,
+                                  onPressed: () => _seekRelative(-10),
+                                ),
+                                GestureDetector(
+                                  onTap: _togglePlayPause,
+                                  child: Container(
+                                    width: 48,
+                                    height: 48,
+                                    decoration: const BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: Color(0xFFFFC83B),
+                                      boxShadow: [
+                                        BoxShadow(color: Color(0x55FFC83B), blurRadius: 10),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                      color: const Color(0xFF1E1B18),
+                                      size: 28,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.forward_10_rounded),
+                                  color: theme.textColor,
+                                  iconSize: 24,
+                                  onPressed: () => _seekRelative(10),
+                                ),
+                                IconButton(
+                                  icon: Icon(_currentVolume > 0.01 ? Icons.volume_up_rounded : Icons.volume_off_rounded),
+                                  color: theme.textColor,
+                                  iconSize: 24,
+                                  onPressed: _toggleMute,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
 
                       // 选集抽屉浮层

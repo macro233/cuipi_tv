@@ -7,6 +7,7 @@ class AppTopHeader extends StatelessWidget {
   final ValueChanged<String> onTabChanged;
   final VoidCallback onOpenSettings;
   final bool isMobile;
+  final bool isTv;
   final String currentThemeKey;
 
   const AppTopHeader({
@@ -15,7 +16,8 @@ class AppTopHeader extends StatelessWidget {
     required this.onTabChanged,
     required this.onOpenSettings,
     this.isMobile = false,
-    this.currentThemeKey = 'teal',
+    this.isTv = false,
+    this.currentThemeKey = 'ivory',
   });
 
   @override
@@ -25,41 +27,62 @@ class AppTopHeader extends StatelessWidget {
 
     if (isMobile) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         child: Row(
           children: [
-            // Logo & Title
+            // 1. Seamless Brand Logo & Title
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Container(
-                  width: 34,
-                  height: 34,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.accent.withValues(alpha: 0.35),
-                        blurRadius: 10,
-                      ),
-                    ],
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(9),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: 30,
+                    height: 30,
+                    fit: BoxFit.cover,
                   ),
-                  child: Image.asset('assets/logo.png', width: 34, height: 34, fit: BoxFit.contain),
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  "脆皮tv",
+                  "脆皮",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
-                    color: isLight ? theme.textColor : const Color(0xFFF0F0F0),
+                    color: isLight ? theme.textColor : const Color(0xFFFFFDF7),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFFFFC83B), Color(0xFFD97706)],
+                    ),
+                    borderRadius: BorderRadius.circular(6),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                        blurRadius: 4,
+                      ),
+                    ],
+                  ),
+                  child: const Text(
+                    "TV",
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF14161E),
+                      letterSpacing: 0.5,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(width: 8),
-            // Navigation tabs: 影视 / 直播 / 本地
+            const SizedBox(width: 10),
+
+            // 2. Navigation tabs: 影视 / 直播 / 本地
             Expanded(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
@@ -67,47 +90,54 @@ class AppTopHeader extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    _buildNavPill("🎬 影视", keyName: "vod", theme: theme),
-                    _buildNavPill("📺 直播", keyName: "live", theme: theme),
-                    _buildNavPill("💾 本地", keyName: "local", theme: theme),
+                    _buildNavPill("🎬 影视", keyName: "vod", theme: theme, isTv: false),
+                    _buildNavPill("📺 直播", keyName: "live", theme: theme, isTv: false),
+                    _buildNavPill("💾 本地", keyName: "local", theme: theme, isTv: false),
                   ],
                 ),
               ),
             ),
-            // Far Right: Settings Button
+            const SizedBox(width: 6),
+
+            // 3. Settings Button
             TvFocusable(
               onTap: onOpenSettings,
               builder: (context, isFocused) {
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
                     color: isFocused
                         ? theme.accent
-                        : (isLight ? Colors.white : Colors.white.withValues(alpha: 0.1)),
-                    borderRadius: BorderRadius.circular(20),
+                        : (isLight
+                            ? Colors.black.withValues(alpha: 0.05)
+                            : Colors.white.withValues(alpha: 0.1)),
+                    borderRadius: BorderRadius.circular(18),
                     border: Border.all(
-                      color: isFocused ? theme.accent : (isLight ? theme.cardBorder : Colors.white.withValues(alpha: 0.18)),
-                      width: 1.2,
+                      color: isFocused
+                          ? theme.accent
+                          : (isLight ? theme.cardBorder : Colors.white.withValues(alpha: 0.16)),
+                      width: 1,
                     ),
-                    boxShadow: isLight
-                        ? [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 6)]
-                        : null,
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Icon(
                         Icons.settings_outlined,
-                        size: 16,
-                        color: isFocused ? Colors.white : (isLight ? theme.textColor : theme.accent),
+                        size: 15,
+                        color: isFocused
+                            ? Colors.white
+                            : (isLight ? theme.textColor : Colors.white),
                       ),
                       const SizedBox(width: 4),
                       Text(
                         "设置",
                         style: TextStyle(
-                          fontSize: 12,
+                          fontSize: 11.5,
                           fontWeight: FontWeight.w800,
-                          color: isFocused ? Colors.white : (isLight ? theme.textColor : Colors.white),
+                          color: isFocused
+                              ? Colors.white
+                              : (isLight ? theme.textColor : Colors.white),
                         ),
                       ),
                     ],
@@ -120,114 +150,191 @@ class AppTopHeader extends StatelessWidget {
       );
     }
 
-    // Tablet / Desktop / TV / Landscape
+    // 📺 大屏电视版 (TV Mode) & 💻 电脑/平板桌面端
+    final logoSize = isTv ? 44.0 : 36.0;
+    final titleFontSize = isTv ? 24.0 : 20.0;
+    final badgeFontSize = isTv ? 12.0 : 11.0;
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: EdgeInsets.symmetric(
+        horizontal: isTv ? 24 : 14,
+        vertical: isTv ? 14 : 8,
+      ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Logo & Title
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: isLight ? Colors.white.withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: isLight ? theme.cardBorder : Colors.white.withValues(alpha: 0.15)),
-              boxShadow: isLight
-                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3))]
-                  : null,
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    boxShadow: [
-                      BoxShadow(
-                        color: theme.accent.withValues(alpha: 0.35),
-                        blurRadius: 10,
-                      ),
-                    ],
-                  ),
-                  child: Image.asset('assets/logo.png', width: 36, height: 36, fit: BoxFit.contain),
+          // 1. 无缝一体化品牌 Logo & 标题（彻底告别生硬未抠白框，融入主题）
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: logoSize,
+                height: logoSize,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(isTv ? 14 : 11),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                      blurRadius: isTv ? 14 : 10,
+                      spreadRadius: 1,
+                    ),
+                  ],
                 ),
-                const SizedBox(width: 10),
-                Text(
-                  "脆皮tv",
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(isTv ? 14 : 11),
+                  child: Image.asset(
+                    'assets/logo.png',
+                    width: logoSize,
+                    height: logoSize,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                "脆皮",
+                style: TextStyle(
+                  fontSize: titleFontSize,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: -0.5,
+                  color: isLight ? theme.textColor : const Color(0xFFFFFDF7),
+                ),
+              ),
+              const SizedBox(width: 6),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTv ? 8 : 6,
+                  vertical: isTv ? 3 : 2,
+                ),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFC83B), Color(0xFFD97706)],
+                  ),
+                  borderRadius: BorderRadius.circular(isTv ? 8 : 6),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFF59E0B).withValues(alpha: 0.35),
+                      blurRadius: 6,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  "TV",
                   style: TextStyle(
-                    fontSize: 20,
+                    fontSize: badgeFontSize,
                     fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                    color: isLight ? theme.textColor : const Color(0xFFF0F0F0),
+                    color: const Color(0xFF14161E),
+                    letterSpacing: 0.6,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-          // Navigation tabs: 影视点播 / 电视直播 / 本地资源 (Center pills)
+
+          // 2. 中间导航胶囊：影视点播 / 电视直播 / 本地资源 (天然透明无缝，电视版更大)
           Container(
-            padding: const EdgeInsets.all(4),
+            padding: EdgeInsets.all(isTv ? 5 : 3),
             decoration: BoxDecoration(
-              color: isLight ? Colors.white.withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(40),
-              border: Border.all(color: isLight ? theme.cardBorder : Colors.white.withValues(alpha: 0.15)),
-              boxShadow: isLight
-                  ? [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 3))]
-                  : null,
+              color: isLight
+                  ? Colors.black.withValues(alpha: 0.04)
+                  : Colors.white.withValues(alpha: 0.06),
+              borderRadius: BorderRadius.circular(isTv ? 32 : 24),
+              border: Border.all(
+                color: isLight
+                    ? theme.cardBorder
+                    : Colors.white.withValues(alpha: 0.12),
+                width: 1,
+              ),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                _buildNavPill("🎬 影视点播", keyName: "vod", theme: theme),
-                _buildNavPill("📺 电视直播", keyName: "live", theme: theme),
-                _buildNavPill("💾 本地资源", keyName: "local", theme: theme),
+                _buildNavPill(
+                  isTv ? "🎬  影视点播" : "🎬 影视点播",
+                  keyName: "vod",
+                  theme: theme,
+                  isTv: isTv,
+                ),
+                _buildNavPill(
+                  isTv ? "📺  电视直播" : "📺 电视直播",
+                  keyName: "live",
+                  theme: theme,
+                  isTv: isTv,
+                ),
+                _buildNavPill(
+                  isTv ? "💾  本地资源" : "💾 本地资源",
+                  keyName: "local",
+                  theme: theme,
+                  isTv: isTv,
+                ),
               ],
             ),
           ),
-          // Far Right: Settings Button
+
+          // 3. 右侧系统设置按钮 (大屏高反差、大触摸/按键区域)
           TvFocusable(
             onTap: onOpenSettings,
             builder: (context, isFocused) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                padding: EdgeInsets.symmetric(
+                  horizontal: isTv ? 20 : 14,
+                  vertical: isTv ? 12 : 8,
+                ),
                 decoration: BoxDecoration(
                   gradient: isFocused
-                      ? LinearGradient(colors: [theme.accent, theme.accent.withValues(alpha: 0.8)])
-                      : LinearGradient(
-                          colors: [
-                            const Color(0xFF2563EB).withValues(alpha: 0.85),
-                            const Color(0xFF1D4ED8).withValues(alpha: 0.85),
-                          ],
-                        ),
-                  borderRadius: BorderRadius.circular(30),
+                      ? const LinearGradient(
+                          colors: [Color(0xFFFFC83B), Color(0xFFD97706)],
+                        )
+                      : (isLight
+                          ? null
+                          : LinearGradient(
+                              colors: [
+                                Colors.white.withValues(alpha: 0.14),
+                                Colors.white.withValues(alpha: 0.08),
+                              ],
+                            )),
+                  color: (!isFocused && isLight)
+                      ? Colors.black.withValues(alpha: 0.05)
+                      : null,
+                  borderRadius: BorderRadius.circular(isTv ? 24 : 18),
                   border: Border.all(
-                    color: isFocused ? Colors.white : const Color(0xFF60A5FA).withValues(alpha: 0.5),
-                    width: 1.5,
+                    color: isFocused
+                        ? const Color(0xFFFFD166)
+                        : (isLight
+                            ? theme.cardBorder
+                            : Colors.white.withValues(alpha: 0.2)),
+                    width: isFocused ? 2 : 1,
                   ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: (isFocused ? theme.accent : const Color(0xFF2563EB)).withValues(alpha: 0.35),
-                      blurRadius: 10,
-                    ),
-                  ],
+                  boxShadow: isFocused
+                      ? [
+                          BoxShadow(
+                            color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
+                            blurRadius: 12,
+                          )
+                        ]
+                      : null,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Icon(
                       Icons.settings_outlined,
-                      size: 17,
-                      color: Colors.white,
+                      size: isTv ? 20 : 16,
+                      color: isFocused
+                          ? const Color(0xFF14161E)
+                          : (isLight ? theme.textColor : Colors.white),
                     ),
-                    const SizedBox(width: 8),
-                    const Text(
-                      "系统设置",
+                    const SizedBox(width: 6),
+                    Text(
+                      "偏好设置",
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: isTv ? 15 : 12.5,
                         fontWeight: FontWeight.w800,
-                        color: Colors.white,
+                        color: isFocused
+                            ? const Color(0xFF14161E)
+                            : (isLight ? theme.textColor : Colors.white),
                       ),
                     ),
                   ],
@@ -240,42 +347,58 @@ class AppTopHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildNavPill(String title, {required String keyName, required ThemePreset theme}) {
+  Widget _buildNavPill(
+    String title, {
+    required String keyName,
+    required ThemePreset theme,
+    required bool isTv,
+  }) {
     final isSelected = selectedTab == keyName;
     final isLight = theme.isLight;
 
     return TvFocusable(
       onTap: () => onTabChanged(keyName),
       builder: (context, isFocused) {
-        return Container(
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
           margin: const EdgeInsets.symmetric(horizontal: 3),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+          padding: EdgeInsets.symmetric(
+            horizontal: isTv ? 20 : 14,
+            vertical: isTv ? 10 : 7,
+          ),
           decoration: BoxDecoration(
             gradient: (isSelected || isFocused)
-                ? LinearGradient(colors: [theme.accent, theme.accent.withValues(alpha: 0.85)])
+                ? LinearGradient(
+                    colors: [theme.accent, theme.accent.withValues(alpha: 0.85)],
+                  )
                 : null,
             color: (isSelected || isFocused)
                 ? null
-                : (isLight ? Colors.transparent : Colors.white.withValues(alpha: 0.06)),
-            borderRadius: BorderRadius.circular(20),
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(isTv ? 22 : 16),
             border: Border.all(
               color: (isSelected || isFocused)
                   ? theme.accent
-                  : (isLight ? Colors.transparent : Colors.white.withValues(alpha: 0.1)),
+                  : Colors.transparent,
               width: (isSelected || isFocused) ? 1.5 : 1,
             ),
             boxShadow: (isSelected || isFocused)
-                ? [BoxShadow(color: theme.accent.withValues(alpha: 0.4), blurRadius: 8)]
+                ? [
+                    BoxShadow(
+                      color: theme.accent.withValues(alpha: 0.35),
+                      blurRadius: isTv ? 12 : 8,
+                    )
+                  ]
                 : null,
           ),
           child: Text(
             title,
             style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w800,
+              fontSize: isTv ? 15 : 12.5,
+              fontWeight: (isSelected || isFocused) ? FontWeight.w900 : FontWeight.w700,
               color: (isSelected || isFocused)
                   ? Colors.white
-                  : (isLight ? theme.secondaryTextColor : const Color(0xFF94A3B8)),
+                  : (isLight ? theme.textColor : const Color(0xFFCBD5E1)),
             ),
           ),
         );
