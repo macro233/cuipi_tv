@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>脆皮TV - 局域网手机配置遥控终端</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      user-select: none;
+    }
+
+    body {
+      background: #0F1117;
+      color: #FFFFFF;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Mobile Header */
+    .mobile-header {
+      background: rgba(26, 30, 41, 0.95);
+      backdrop-filter: blur(12px);
+      padding: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
+      background: #1860FF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      overflow: hidden;
+    }
+
+    .brand-icon img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 10px;
+    }
+
+    .brand-title {
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    .status-tag {
+      font-size: 11px;
+      background: rgba(18, 183, 106, 0.15);
+      color: #12B76A;
+      border: 1px solid rgba(18, 183, 106, 0.3);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #12B76A;
+    }
+
+    /* Tab navigation */
+    .nav-tabs {
+      display: flex;
+      background: rgba(255, 255, 255, 0.05);
+      margin: 12px 16px;
+      padding: 4px;
+      border-radius: 16px;
+    }
+
+    .tab-btn {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: #94A3B8;
+      padding: 10px 0;
+      font-size: 13px;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+    }
+
+    .tab-btn.active {
+      background: #1860FF;
+      color: #FFFFFF;
+      box-shadow: 0 4px 12px rgba(24, 96, 255, 0.3);
+    }
+
+    /* Tab Panels */
+    .tab-panel {
+      display: none;
+      padding: 16px;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* Section Headers */
+    .sec-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #94A3B8;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Remote Control Section */
+    .dpad-container {
+      width: 220px;
+      height: 220px;
+      margin: 20px auto 30px auto;
+      position: relative;
+    }
+
+    .dpad-btn {
+      position: absolute;
+      background: #1E2330;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .dpad-btn:active {
+      background: #1860FF;
+      transform: scale(0.95);
+    }
+
+    .dpad-up {
+      top: 0;
+      left: 70px;
+      width: 80px;
+      height: 70px;
+      border-radius: 40px 40px 10px 10px;
+    }
+
+    .dpad-down {
+      bottom: 0;
+      left: 70px;
+      width: 80px;
+      height: 70px;
+      border-radius: 10px 10px 40px 40px;
+    }
+
+    .dpad-left {
+      top: 70px;
+      left: 0;
+      width: 70px;
+      height: 80px;
+      border-radius: 40px 10px 10px 40px;
+    }
+
+    .dpad-right {
+      top: 70px;
+      right: 0;
+      width: 70px;
+      height: 80px;
+      border-radius: 10px 40px 40px 10px;
+    }
+
+    .dpad-ok {
+      top: 70px;
+      left: 70px;
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: #1860FF;
+      font-size: 16px;
+      font-weight: 800;
+    }
+
+    /* Function Buttons Row */
+    .func-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .func-btn {
+      background: #1E2330;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: white;
+      padding: 14px 0;
+      border-radius: 16px;
+      font-size: 13px;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+    }
+
+    .func-btn:active {
+      background: #2B3245;
+    }
+
+    /* Input Card */
+    .card-box {
+      background: #1E2330;
+      border-radius: 20px;
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .text-input {
+      flex: 1;
+      background: #111318;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 12px;
+      padding: 12px 14px;
+      color: white;
+      font-size: 13px;
+      outline: none;
+    }
+
+    .btn-submit {
+      background: #1860FF;
+      border: none;
+      color: white;
+      padding: 0 16px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Source Presets */
+    .preset-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .preset-item {
+      background: #1E2330;
+      border-radius: 14px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .preset-name {
+      font-size: 13px;
+      font-weight: 700;
+    }
+
+    .preset-sub {
+      font-size: 11px;
+      color: #94A3B8;
+    }
+
+    .btn-push {
+      background: rgba(24, 96, 255, 0.2);
+      color: #4B88FF;
+      border: 1px solid #1860FF;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    /* Channel Grid */
+    .channel-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .channel-btn {
+      background: #1E2330;
+      border-radius: 14px;
+      padding: 12px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+    }
+
+    .channel-btn h4 {
+      font-size: 13px;
+      margin-bottom: 2px;
+    }
+
+    .channel-btn span {
+      font-size: 10px;
+      color: #94A3B8;
+    }
+
+    /* Feedback Banner */
+    .mobile-toast {
+      position: fixed;
+      bottom: 20px;
+      left: 16px;
+      right: 16px;
+      background: #12B76A;
+      color: white;
+      padding: 12px 16px;
+      border-radius: 14px;
+      font-size: 13px;
+      font-weight: 700;
+      text-align: center;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.3s, transform 0.3s;
+      pointer-events: none;
+    }
+
+    .mobile-toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Mobile Header -->
+  <header class="mobile-header">
+    <div class="brand">
+      <div class="brand-icon"><img src="logo.png" alt="脆皮TV Logo" /></div>
+      <span class="brand-title">脆皮TV 局域网控制台</span>
+    </div>
+    <div class="status-tag">
+      <div class="dot"></div> 已连接电视
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <nav class="nav-tabs">
+    <button class="tab-btn active" data-target="tab-remote"><i data-lucide="gamepad-2"></i> 虚拟遥控器</button>
+    <button class="tab-btn" data-target="tab-config"><i data-lucide="settings"></i> TVBox配置</button>
+    <button class="tab-btn" data-target="tab-cast"><i data-lucide="cast"></i> 视频投屏</button>
+  </nav>
+
+  <!-- Tab 1: Remote Controller -->
+  <main class="tab-panel active" id="tab-remote">
+    <div class="sec-title"><i data-lucide="navigation"></i> 电视遥控方向盘</div>
+    
+    <div class="dpad-container">
+      <button class="dpad-btn dpad-up" data-cmd="UP"><i data-lucide="chevron-up"></i></button>
+      <button class="dpad-btn dpad-left" data-cmd="LEFT"><i data-lucide="chevron-left"></i></button>
+      <button class="dpad-btn dpad-ok" data-cmd="OK">OK</button>
+      <button class="dpad-btn dpad-right" data-cmd="RIGHT"><i data-lucide="chevron-right"></i></button>
+      <button class="dpad-btn dpad-down" data-cmd="DOWN"><i data-lucide="chevron-down"></i></button>
+    </div>
+
+    <div class="sec-title"><i data-lucide="sliders"></i> 快捷操作按键</div>
+    <div class="func-row">
+      <button class="func-btn" data-cmd="BACK">
+        <i data-lucide="corner-down-left"></i>
+        <span>返回</span>
+      </button>
+      <button class="func-btn" data-cmd="HOME">
+        <i data-lucide="home"></i>
+        <span>主页</span>
+      </button>
+      <button class="func-btn" data-cmd="QR">
+        <i data-lucide="qr-code"></i>
+        <span>二维码</span>
+      </button>
+      <button class="func-btn" data-cmd="VOL_UP">
+        <i data-lucide="volume-2"></i>
+        <span>音量 +</span>
+      </button>
+      <button class="func-btn" data-cmd="VOL_DOWN">
+        <i data-lucide="volume-1"></i>
+        <span>音量 -</span>
+      </button>
+      <button class="func-btn" data-cmd="MUTE">
+        <i data-lucide="volume-x"></i>
+        <span>静音</span>
+      </button>
+    </div>
+
+    <div class="card-box">
+      <div class="sec-title"><i data-lucide="keyboard"></i> 文字与搜索实时推送</div>
+      <div class="input-row">
+        <input type="text" id="mobile-search-input" class="text-input" placeholder="输入影片名称或网页链接..." />
+        <button class="btn-submit" id="btn-send-search"><i data-lucide="send"></i> 推送</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Tab 2: TVBox Source Config -->
+  <main class="tab-panel" id="tab-config">
+    <div class="card-box">
+      <div class="sec-title"><i data-lucide="plus-circle"></i> 手机端一键添加 TVBox 接口</div>
+      <div class="form-group" style="margin-bottom:10px;">
+        <input type="text" id="source-name" class="text-input" placeholder="接口名称 (如: cyao2q专线)" style="width:100%; margin-bottom:8px;" />
+        <input type="text" id="source-url" class="text-input" placeholder="https://... (JSON / M3U 格式)" style="width:100%; margin-bottom:12px;" />
+        <button class="btn-submit" id="btn-add-custom-source" style="width:100%; padding:12px 0;">
+          <i data-lucide="upload"></i> 一键推送配置至电视
+        </button>
+      </div>
+    </div>
+
+    <!-- GitHub 全网源检索模块 -->
+    <div class="card-box" style="margin-top: 14px; margin-bottom: 16px;">
+      <div class="sec-title"><i data-lucide="github"></i> GitHub 全网源智能检索与推送</div>
+      <div class="input-row" style="margin-bottom: 8px;">
+        <input type="text" id="mobile-github-query" class="text-input" placeholder="在 GitHub 搜源，如: 肥猫 / 饭太硬 / 直播 / 4K" />
+        <button class="btn-submit" id="btn-search-github"><i data-lucide="search"></i> 搜索</button>
+      </div>
+      <div id="mobile-github-chips" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 8px;">
+        <span class="m-chip active-chip" data-kw="" style="background: rgba(24,96,255,0.25); color: #38BDF8; font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap; font-weight: bold;">🔥 全部</span>
+        <span class="m-chip" data-kw="肥猫" style="background: rgba(255,255,255,0.06); color: #94A3B8; font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap;">🐱 肥猫</span>
+        <span class="m-chip" data-kw="饭太硬" style="background: rgba(255,255,255,0.06); color: #94A3B8; font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap;">🍙 饭太硬</span>
+        <span class="m-chip" data-kw="直播" style="background: rgba(255,255,255,0.06); color: #94A3B8; font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap;">📺 4K直播</span>
+        <span class="m-chip" data-kw="多仓" style="background: rgba(255,255,255,0.06); color: #94A3B8; font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap;">📦 多仓</span>
+        <span class="m-chip" data-kw="巧技" style="background: rgba(255,255,255,0.06); color: #94A3B8; font-size: 11px; padding: 4px 10px; border-radius: 8px; cursor: pointer; white-space: nowrap;">🌟 巧技</span>
+      </div>
+      <div id="mobile-github-results" class="preset-list" style="margin-top: 6px; max-height: 240px; overflow-y: auto;">
+        <div style="text-align: center; color: #64748B; font-size: 12px; padding: 12px 0;">点击上方快捷标签或搜索即可发现 GitHub 开源接口</div>
+      </div>
+    </div>
+
+    <div class="sec-title"><i data-lucide="sparkles"></i> LibreTV 官方生态与热门接口（点击一键推送）</div>
+    <div class="preset-list">
+      <div class="preset-item">
+        <div>
+          <div class="preset-name">🌟 脆皮TV × LibreTV 官方推荐源</div>
+          <div class="preset-sub">多采集站聚合 · 4K秒播秒开</div>
+        </div>
+        <button class="btn-push" data-url="https://bfzyapi.com/api.php/provide/vod" data-title="LibreTV 官方推荐源">推送电视</button>
+      </div>
+
+      <div class="preset-item">
+        <div>
+          <div class="preset-name">⚡ 量子资源 (LibreTV切片)</div>
+          <div class="preset-sub">高速CDN切片 · HLS秒开</div>
+        </div>
+        <button class="btn-push" data-url="https://cj.lziapi.com/api.php/provide/vod" data-title="量子资源">推送电视</button>
+      </div>
+
+      <div class="preset-item">
+        <div>
+          <div class="preset-name">⚡ 非凡资源 (LibreTV全网)</div>
+          <div class="preset-sub">全网采集 · 稳定并发</div>
+        </div>
+        <button class="btn-push" data-url="https://cj.ffzyapi.com/api.php/provide/vod" data-title="非凡资源">推送电视</button>
+      </div>
+
+      <div class="preset-item">
+        <div>
+          <div class="preset-name">📡 IPTV 全球极清直播 (Fanmingming)</div>
+          <div class="preset-sub">央视/卫视/体育全球超清频道</div>
+        </div>
+        <button class="btn-push" data-url="https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/global.m3u" data-title="IPTV全球直播">推送电视</button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Tab 3: Video Cast & Remote Play -->
+  <main class="tab-panel" id="tab-cast">
+    <div class="card-box">
+      <div class="sec-title"><i data-lucide="link"></i> 粘贴视频 URL 投屏播放</div>
+      <div class="input-row">
+        <input type="text" id="cast-video-url" class="text-input" placeholder="输入 MP4 / M3U8 视频流 URL..." value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" />
+        <button class="btn-submit" id="btn-cast-play"><i data-lucide="play"></i> 投屏</button>
+      </div>
+    </div>
+
+    <div class="sec-title"><i data-lucide="tv-2"></i> 快速选择播放频道</div>
+    <div class="channel-grid">
+      <div class="channel-btn" data-video="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" data-title="CCTV-1 综合频道 4K">
+        <h4>CCTV-1 综合 4K</h4>
+        <span>高码率直播流</span>
+      </div>
+      <div class="channel-btn" data-video="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4" data-title="CCTV-5 体育频道 HD">
+        <h4>CCTV-5 体育频道</h4>
+        <span>精彩赛事精选</span>
+      </div>
+      <div class="channel-btn" data-video="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4" data-title="CHC 高清电影频道">
+        <h4>CHC 高清电影</h4>
+        <span>4K 电影轮播</span>
+      </div>
+      <div class="channel-btn" data-video="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4" data-title="国家地理 纪录片">
+        <h4>国家地理 4K</h4>
+        <span>纪录片专线</span>
+      </div>
+    </div>
+  </main>
+
+  <div class="mobile-toast" id="m-toast">发送成功！电视端已同步接收</div>
+
+  <script>
+    // Initialize icons
+    lucide.createIcons();
+
+    // Broadcast Channel for LAN Sync
+    const channel = new BroadcastChannel('cuipi_tv_lan');
+
+    function sendSignal(type, payload = {}) {
+      const data = { type, payload, timestamp: Date.now() };
+      channel.postMessage(data);
+      localStorage.setItem('cuipi_tv_signal', JSON.stringify(data));
+
+      // Also post to HTTP API backend if running on HTTP server
+      if (type === 'CMD') {
+        fetch('/api/remote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+      } else if (type === 'ADD_SOURCE') {
+        fetch('/api/source', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+      } else if (type === 'CAST_VIDEO') {
+        fetch('/api/cast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+      } else if (type === 'SEARCH_PUSH') {
+        fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+      }
+
+      showToast(type === 'CMD' ? `已发送按键 [${payload.cmd}]` : '配置与指令已推送至电视！');
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('m-toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2000);
+    }
+
+    // Tabs logic
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById(btn.dataset.target).classList.add('active');
+      });
+    });
+
+    // Remote D-Pad & Function Buttons
+    document.querySelectorAll('.dpad-btn, .func-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        if (cmd) sendSignal('CMD', { cmd });
+      });
+    });
+
+    // Send Search / Text Push
+    document.getElementById('btn-send-search').addEventListener('click', () => {
+      const val = document.getElementById('mobile-search-input').value.trim();
+      if (val) {
+        sendSignal('SEARCH_PUSH', { text: val });
+        document.getElementById('mobile-search-input').value = '';
+      }
+    });
+
+    // Custom Source Push
+    document.getElementById('btn-add-custom-source').addEventListener('click', () => {
+      const name = document.getElementById('source-name').value.trim() || '手机推送接口';
+      const url = document.getElementById('source-url').value.trim();
+      if (url) {
+        sendSignal('ADD_SOURCE', { name, url });
+        document.getElementById('source-name').value = '';
+        document.getElementById('source-url').value = '';
+      } else {
+        alert('请输入有效的配置 URL 地址');
+      }
+    });
+
+    // Preset Buttons
+    document.querySelectorAll('.btn-push').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sendSignal('ADD_SOURCE', { name: btn.dataset.title, url: btn.dataset.url });
+      });
+    });
+
+    // Video Cast Button
+    document.getElementById('btn-cast-play').addEventListener('click', () => {
+      const videoUrl = document.getElementById('cast-video-url').value.trim();
+      if (videoUrl) {
+        sendSignal('CAST_VIDEO', { url: videoUrl, title: '手机投屏视频' });
+      }
+    });
+
+    // Preset Channel Cast Buttons
+    document.querySelectorAll('.channel-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sendSignal('CAST_VIDEO', { url: btn.dataset.video, title: btn.dataset.title });
+      });
+    });
+
+    // GitHub Source Search on Mobile
+    async function loadGithubSources(kw = '') {
+      const container = document.getElementById('mobile-github-results');
+      if (!container) return;
+      container.innerHTML = '<div style="text-align:center; padding:12px; color:#94A3B8; font-size:12px;">正在连接 GitHub 检索加速节点...</div>';
+      try {
+        const res = await fetch(`/api/github/search?q=${encodeURIComponent(kw)}`);
+        const data = await res.json();
+        const list = data.list || [];
+        if (list.length === 0) {
+          container.innerHTML = '<div style="text-align:center; padding:12px; color:#64748B; font-size:12px;">未检索到相关源，换个关键词试试</div>';
+          return;
+        }
+        container.innerHTML = list.map(item => `
+          <div class="preset-item">
+            <div>
+              <div class="preset-name">${item.name} <span style="color:#FBBF24; font-size:10px;">★ ${item.stars}</span></div>
+              <div class="preset-sub">${item.desc || item.repo}</div>
+            </div>
+            <button class="btn-push btn-github-push" data-url="${item.mirrorUrl || item.rawUrl}" data-title="${item.name}">推送电视</button>
+          </div>
+        `).join('');
+        container.querySelectorAll('.btn-github-push').forEach(b => {
+          b.addEventListener('click', () => {
+            sendSignal('ADD_SOURCE', { name: b.dataset.title, url: b.dataset.url });
+          });
+        });
+      } catch (e) {
+        container.innerHTML = '<div style="text-align:center; padding:12px; color:#EF4444; font-size:12px;">检索失败，请确保后台服务正常运行</div>';
+      }
+    }
+
+    const btnSearchGh = document.getElementById('btn-search-github');
+    const inputSearchGh = document.getElementById('mobile-github-query');
+    if (btnSearchGh && inputSearchGh) {
+      btnSearchGh.addEventListener('click', () => {
+        loadGithubSources(inputSearchGh.value.trim());
+      });
+      inputSearchGh.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          loadGithubSources(inputSearchGh.value.trim());
+        }
+      });
+    }
+
+    document.querySelectorAll('#mobile-github-chips .m-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        document.querySelectorAll('#mobile-github-chips .m-chip').forEach(c => {
+          c.style.background = 'rgba(255,255,255,0.06)';
+          c.style.color = '#94A3B8';
+        });
+        chip.style.background = 'rgba(24,96,255,0.25)';
+        chip.style.color = '#38BDF8';
+        const kw = chip.dataset.kw;
+        if (inputSearchGh) inputSearchGh.value = kw;
+        loadGithubSources(kw);
+      });
+    });
+
+    let githubLoaded = false;
+    const configTabBtn = document.querySelector('[data-target="tab-config"]');
+    if (configTabBtn) {
+      configTabBtn.addEventListener('click', () => {
+        if (!githubLoaded) {
+          githubLoaded = true;
+          loadGithubSources('');
+        }
+      });
+    }
+  </script>
+</body>
+</html>

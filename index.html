@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>脆皮TV × LibreTV - 影视聚合与多屏联动中心</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- HLS.js for web video streaming -->
+  <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+</head>
+<body>
+  <!-- Ambient Gradient Background -->
+  <div class="ambient-bg">
+    <div class="glow-sphere glow-1"></div>
+    <div class="glow-sphere glow-2"></div>
+  </div>
+
+  <div class="main-wrapper" style="margin-left: 0; padding: 20px 40px; max-width: 1400px;">
+    <!-- Top Nav Header -->
+    <header class="top-nav">
+      <div class="nav-brand focusable" tabindex="0" id="btn-home-brand">
+        <div class="brand-icon">
+          <img src="logo.png" alt="脆皮TV Logo" />
+        </div>
+        <span class="brand-text">脆皮<b>TV</b> <span style="font-size:12px; font-weight:600; background:rgba(24,96,255,0.12); color:#1860FF; padding:2px 8px; border-radius:8px; margin-left:4px;">× LibreTV</span></span>
+      </div>
+
+      <nav class="nav-tabs">
+        <button class="nav-pill focusable active" data-nav="vod"><i data-lucide="flame" style="width:16px; margin-right:4px;"></i> 影视聚合</button>
+        <button class="nav-pill focusable" data-nav="live"><i data-lucide="tv" style="width:16px; margin-right:4px;"></i> 电视直播</button>
+        <button class="nav-pill focusable" data-nav="tvbox"><i data-lucide="layers" style="width:16px; margin-right:4px;"></i> 订阅与源</button>
+        <button class="nav-pill focusable highlight-pill" data-nav="remote"><i data-lucide="gamepad-2" style="width:16px; margin-right:4px;"></i> 虚拟遥控</button>
+      </nav>
+
+      <div class="top-status-pills">
+        <div class="status-badge focusable" title="点击查看局域网联动信息">
+          <i data-lucide="wifi"></i>
+          <span id="top-lan-ip"><b>192.168.1.108</b>:8080</span>
+          <span class="badge-tag blue">大屏在线联动</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Global User Search Bar (LibreTV Multi-source Real-time Parallel Search) -->
+    <div class="search-container-box" style="margin: 20px 0 25px 0; background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); padding: 14px 20px; border-radius: 20px; border: 1px solid var(--card-border); display: flex; align-items: center; gap: 12px;">
+      <i data-lucide="search" style="color: var(--color-blue); width: 22px; height: 22px; flex-shrink: 0;"></i>
+      <input type="text" id="global-search-input" class="custom-input" placeholder="输入剧名、电影或动漫（例如：三体、狂飙、繁花、间谍过家家）实时多源搜索..." style="border: none; background: transparent; font-size: 15px; flex: 1; outline: none; font-weight: 600;" />
+      <button class="focusable" id="btn-clear-search-web" style="display:none; border:none; background:rgba(0,0,0,0.08); border-radius:50%; width:28px; height:28px; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;" title="清空文本">
+        <i data-lucide="x" style="width:16px; height:16px; color:#647087;"></i>
+      </button>
+      <button class="btn-primary-small focusable" id="btn-do-search-web" style="padding: 10px 18px; border-radius: 12px; flex-shrink: 0;"><i data-lucide="search"></i> 聚合搜索</button>
+      <button class="btn-primary-small focusable" id="btn-push-search-web" style="padding: 10px 18px; border-radius: 12px; flex-shrink: 0; background: rgba(24,96,255,0.12); color:#1860FF; border:1px solid rgba(24,96,255,0.3);"><i data-lucide="send"></i> 推送电视</button>
+    </div>
+
+    <!-- MAIN VIEW PANELS -->
+    <main>
+      <!-- View 1: 影视列表 (VOD & LibreTV Recommendations Grid) -->
+      <section class="view-panel active" id="view-vod">
+        <div class="category-bar" id="vod-categories" style="margin-bottom: 20px;">
+          <button class="chip focusable active" data-cat="all">🔥 聚合热播榜</button>
+          <button class="chip focusable" data-cat="movie">🎬 豆瓣热门电影</button>
+          <button class="chip focusable" data-cat="tv">📺 豆瓣热播剧集</button>
+          <button class="chip focusable" data-cat="anime">🐉 Bangumi新番放送</button>
+          <button class="chip focusable" data-cat="cms">⚡ Apple CMS采集库</button>
+        </div>
+
+        <!-- Dynamic Results & Loading Banner -->
+        <div id="search-status-bar" style="display:none; margin-bottom:16px; font-size:13px; color:#1860FF; font-weight:700;">
+          <span id="search-status-text">正在并行搜索全网采集站...</span>
+        </div>
+
+        <div class="vod-cards-grid" id="vod-grid">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- View 2: 电视直播频道 (Live TV) -->
+      <section class="view-panel" id="view-live">
+        <div class="category-bar" id="live-categories" style="margin-bottom: 20px;">
+          <button class="chip focusable active" data-lcat="all">全部频道</button>
+          <button class="chip focusable" data-lcat="cctv">央视频道</button>
+          <button class="chip focusable" data-lcat="卫视">卫视精品</button>
+          <button class="chip focusable" data-lcat="体育">体育赛事</button>
+        </div>
+
+        <div class="live-grid" id="live-grid">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- View 3: 用户接口配置 (Source Management) -->
+      <section class="view-panel" id="view-tvbox">
+        <div class="section-top" style="margin-bottom: 20px; display:flex; justify-content:space-between; align-items:center;">
+          <div>
+            <h2 style="font-size: 20px; font-weight: 800;">LibreTV 订阅与 TVBox 接口管理</h2>
+            <p style="font-size: 13px; color: var(--text-muted);">原生兼容 LibreTV-SourceList JSON 与 TVBox 标准多仓，全网秒播</p>
+          </div>
+          <div style="display:flex; gap:10px;">
+            <button class="btn-secondary focusable" id="btn-load-libretv-preset" style="padding:10px 16px; border-radius:12px; font-size:13px; font-weight:700;"><i data-lucide="sparkles"></i> 刷新LibreTV官方源</button>
+            <button class="btn-primary-small focusable" id="btn-add-source-modal"><i data-lucide="plus"></i> 新增订阅接口</button>
+          </div>
+        </div>
+
+        <div class="source-cards-grid" id="source-cards-container">
+          <!-- Rendered dynamically by app.js -->
+        </div>
+      </section>
+
+      <!-- View 4: 虚拟遥控中心 (Remote Controller) -->
+      <section class="view-panel" id="view-remote">
+        <div style="display: grid; grid-template-columns: 340px 1fr; gap: 30px;">
+          <!-- Left: Remote D-Pad Wheel -->
+          <div style="background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); border-radius: 28px; padding: 24px; border: 1px solid var(--card-border); text-align: center;">
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;"><i data-lucide="gamepad-2"></i> 电视虚拟遥控器</h3>
+
+            <div style="width: 220px; height: 220px; margin: 0 auto; position: relative;">
+              <button class="dpad-btn focusable" data-cmd="UP" style="position:absolute; top:0; left:75px; width:70px; height:65px; border-radius:35px 35px 10px 10px; background:#1E2330; color:white; border:none; cursor:pointer;"><i data-lucide="chevron-up"></i></button>
+              <button class="dpad-btn focusable" data-cmd="LEFT" style="position:absolute; top:75px; left:0; width:65px; height:70px; border-radius:35px 10px 10px 35px; background:#1E2330; color:white; border:none; cursor:pointer;"><i data-lucide="chevron-left"></i></button>
+              <button class="dpad-btn focusable" data-cmd="OK" style="position:absolute; top:75px; left:75px; width:70px; height:70px; border-radius:50%; background:#1860FF; color:white; font-weight:800; border:none; cursor:pointer;">OK</button>
+              <button class="dpad-btn focusable" data-cmd="RIGHT" style="position:absolute; top:75px; right:0; width:65px; height:70px; border-radius:10px 35px 35px 10px; background:#1E2330; color:white; border:none; cursor:pointer;"><i data-lucide="chevron-right"></i></button>
+              <button class="dpad-btn focusable" data-cmd="DOWN" style="position:absolute; bottom:0; left:75px; width:70px; height:65px; border-radius:10px 10px 35px 35px; background:#1E2330; color:white; border:none; cursor:pointer;"><i data-lucide="chevron-down"></i></button>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 24px;">
+              <button class="remote-func-btn focusable" data-cmd="BACK" style="background:#0F1117; color:white; padding:12px 0; border-radius:12px; border:none; font-weight:700; cursor:pointer;">返回</button>
+              <button class="remote-func-btn focusable" data-cmd="HOME" style="background:#0F1117; color:white; padding:12px 0; border-radius:12px; border:none; font-weight:700; cursor:pointer;">主页</button>
+              <button class="remote-func-btn focusable" data-cmd="QR" style="background:#0F1117; color:white; padding:12px 0; border-radius:12px; border:none; font-weight:700; cursor:pointer;">二维码</button>
+              <button class="remote-func-btn focusable" data-cmd="VOL_UP" style="background:#0F1117; color:white; padding:12px 0; border-radius:12px; border:none; font-weight:700; cursor:pointer;">音量 +</button>
+              <button class="remote-func-btn focusable" data-cmd="VOL_DOWN" style="background:#0F1117; color:white; padding:12px 0; border-radius:12px; border:none; font-weight:700; cursor:pointer;">音量 -</button>
+              <button class="remote-func-btn focusable" data-cmd="MUTE" style="background:#0F1117; color:white; padding:12px 0; border-radius:12px; border:none; font-weight:700; cursor:pointer;">静音</button>
+            </div>
+          </div>
+
+          <!-- Right: Video Cast & Direct Push -->
+          <div style="background: rgba(255,255,255,0.7); backdrop-filter: blur(20px); border-radius: 28px; padding: 24px; border: 1px solid var(--card-border);">
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;"><i data-lucide="cast"></i> 视频 URL 投屏推送</h3>
+            <div style="display: flex; gap: 10px; margin-bottom: 24px;">
+              <input type="text" id="cast-url-input" class="custom-input" placeholder="输入 MP4 / M3U8 视频流地址投屏至电视..." style="flex:1;" value="" />
+              <button class="btn-primary focusable" id="btn-submit-cast"><i data-lucide="play"></i> 投屏播放</button>
+            </div>
+
+            <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 16px;"><i data-lucide="qr-code"></i> 手机扫码连接</h3>
+            <div style="display: flex; align-items: center; gap: 20px; background: white; padding: 16px; border-radius: 20px;">
+              <canvas id="qr-canvas-clean" style="width: 140px; height: 140px;"></canvas>
+              <div>
+                <p style="font-size: 14px; font-weight: 800; color: var(--color-blue); margin-bottom: 6px;" id="qr-url-text-clean">http://192.168.1.108:8080/mobile.html</p>
+                <p style="font-size: 12px; color: var(--text-muted); line-height: 1.5;">用手机微信/浏览器扫描上方二维码，手机即刻变成无线红外及全功能遥控器</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Video Player Modal Overlay -->
+  <div class="modal-overlay" id="player-modal">
+    <div class="modal-card glass-modal player-modal-card">
+      <button class="modal-close focusable" id="modal-close-player"><i data-lucide="x"></i></button>
+      <div class="modal-header">
+        <h2 id="player-title">视听播放器</h2>
+        <span class="badge-tag blue" id="player-status-tag">4K 直播</span>
+      </div>
+      <div class="video-container">
+        <video id="tv-video" controls autoplay style="width:100%; max-height:480px; border-radius:16px; background:black;"></video>
+      </div>
+    </div>
+  </div>
+
+  <!-- VOD Detail & Episode Selector Modal Overlay -->
+  <div class="modal-overlay" id="vod-detail-modal">
+    <div class="modal-card glass-modal detail-modal-card" style="max-width: 680px;">
+      <button class="modal-close focusable" id="modal-close-detail"><i data-lucide="x"></i></button>
+      <div class="vod-detail-layout" style="display:flex; gap:24px;">
+        <img id="detail-poster" src="" alt="Poster" style="width:170px; height:240px; object-fit:cover; border-radius:16px; box-shadow: 0 10px 24px rgba(0,0,0,0.15);" />
+        <div class="detail-info" style="flex:1; display:flex; flex-direction:column;">
+          <div style="display:flex; align-items:center; gap:8px;">
+            <h2 id="detail-title" style="font-size:20px; font-weight:800;">剧名</h2>
+            <span class="badge-tag blue" id="detail-badge">4K极速</span>
+          </div>
+          <div style="margin:8px 0; font-size:13px; color:var(--text-muted); display:flex; gap:8px;" id="detail-tags">
+            <!-- Dynamic tags -->
+          </div>
+          <p id="detail-desc" style="font-size:12px; line-height:1.6; color:#475569; max-height:85px; overflow-y:auto; margin-bottom:12px;">简介内容加载中...</p>
+
+          <!-- Episodes Grid Container -->
+          <div class="episodes-section" style="margin-top:auto;">
+            <h4 style="font-size:13px; font-weight:800; margin-bottom:8px; color:var(--text-main); display:flex; justify-content:space-between;">
+              <span>分集选集</span>
+              <span id="detail-source-name" style="font-size:11px; color:#1860FF; font-weight:700;">来源: LibreTV多源聚合</span>
+            </h4>
+            <div id="episodes-grid" class="episodes-grid">
+              <!-- Rendered dynamically by app.js -->
+            </div>
+          </div>
+
+          <div style="margin-top:16px; display:flex; gap:12px;">
+            <button class="btn-primary focusable" id="btn-start-play" style="flex:1;"><i data-lucide="play"></i> 立即播放</button>
+            <button class="btn-primary focusable" id="btn-cast-tv" style="background:#12B76A; border-color:#12B76A;"><i data-lucide="tv"></i> 推送大屏</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Source Modal Overlay -->
+  <div class="modal-overlay" id="add-source-modal">
+    <div class="modal-card glass-modal">
+      <button class="modal-close focusable" id="modal-close-add"><i data-lucide="x"></i></button>
+      <div class="modal-header">
+        <div class="modal-icon"><i data-lucide="plus-circle"></i></div>
+        <h2>添加 LibreTV / TVBox 订阅</h2>
+      </div>
+      <div class="modal-body">
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>订阅/接口名称</label>
+          <input type="text" id="input-source-name" class="custom-input focusable" placeholder="例如: LibreTV 官方订阅" />
+        </div>
+        <div class="form-group" style="margin-bottom:14px;">
+          <label>接口 URL (支持 LibreTV-SourceList JSON / TVBox JSON / M3U)</label>
+          <input type="text" id="input-source-url" class="custom-input focusable" placeholder="https://... 或 /api/source-list" />
+        </div>
+        <div class="modal-buttons" style="display:flex; justify-content:flex-end; gap:10px;">
+          <button class="btn-secondary focusable" id="btn-cancel-add">取消</button>
+          <button class="btn-primary focusable" id="btn-confirm-add"><i data-lucide="save"></i> 确定挂载</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Toast -->
+  <div class="toast" id="toast">
+    <i data-lucide="check-circle" class="toast-icon"></i>
+    <span class="toast-msg">操作成功！</span>
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    lucide.createIcons();
+  </script>
+</body>
+</html>

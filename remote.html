@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>脆皮TV - 独立遥控与控制中心</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    .remote-page-container {
+      max-width: 1000px;
+      margin: 40px auto;
+      padding: 0 20px;
+    }
+
+    .remote-grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 24px;
+    }
+
+    .remote-card-panel {
+      background: rgba(255, 255, 255, 0.65);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 24px;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.08);
+    }
+
+    .dpad-box {
+      width: 240px;
+      height: 240px;
+      margin: 20px auto;
+      position: relative;
+    }
+
+    .dpad-btn {
+      position: absolute;
+      background: #1E2330;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+      transition: background 0.15s, transform 0.1s;
+    }
+
+    .dpad-btn:active {
+      background: #1860FF;
+      transform: scale(0.95);
+    }
+
+    .dpad-up { top: 0; left: 80px; width: 80px; height: 75px; border-radius: 40px 40px 10px 10px; }
+    .dpad-down { bottom: 0; left: 80px; width: 80px; height: 75px; border-radius: 10px 10px 40px 40px; }
+    .dpad-left { top: 80px; left: 0; width: 75px; height: 80px; border-radius: 40px 10px 10px 40px; }
+    .dpad-right { top: 80px; right: 0; width: 75px; height: 80px; border-radius: 10px 40px 40px 10px; }
+    .dpad-ok { top: 80px; left: 80px; width: 80px; height: 80px; border-radius: 50%; background: #1860FF; font-size: 16px; font-weight: 800; }
+
+    .func-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-top: 20px;
+    }
+
+    .remote-func-btn {
+      background: rgba(15, 17, 23, 0.85);
+      color: white;
+      border: none;
+      padding: 12px 0;
+      border-radius: 14px;
+      font-size: 12px;
+      font-weight: 700;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .remote-func-btn:hover {
+      background: var(--color-blue);
+    }
+
+    .form-box {
+      margin-bottom: 20px;
+    }
+
+    .form-box h3 {
+      font-size: 15px;
+      font-weight: 800;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .input-group-row {
+      display: flex;
+      gap: 10px;
+    }
+
+    .input-field {
+      flex: 1;
+      padding: 12px 16px;
+      border-radius: 14px;
+      border: 1px solid var(--card-border);
+      background: rgba(255, 255, 255, 0.8);
+      font-size: 13px;
+      font-weight: 600;
+      outline: none;
+    }
+
+    .btn-submit-action {
+      background: var(--color-blue);
+      color: white;
+      border: none;
+      padding: 0 20px;
+      border-radius: 14px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="ambient-bg">
+    <div class="glow-sphere glow-1"></div>
+    <div class="glow-sphere glow-2"></div>
+  </div>
+
+  <div class="remote-page-container">
+    <header class="top-nav" style="margin-bottom: 30px;">
+      <a href="index.html" class="nav-brand" style="text-decoration:none;">
+        <div class="brand-icon"><img src="logo.png" alt="脆皮TV Logo" /></div>
+        <span class="brand-text">脆皮<b>TV</b> 控制中心</span>
+      </a>
+
+      <div class="top-status-pills">
+        <a href="index.html" class="nav-pill active" style="text-decoration:none; color:white;">返回主界面</a>
+      </div>
+    </header>
+
+    <div class="remote-grid">
+      <!-- Left: Remote D-Pad -->
+      <div class="remote-card-panel">
+        <h3 style="font-size: 16px; font-weight: 800; margin-bottom: 8px;"><i data-lucide="gamepad-2"></i> 电视虚拟遥控器</h3>
+        <p style="font-size: 12px; color: var(--text-muted);">方向盘直接控制电视屏幕焦点与按键</p>
+
+        <div class="dpad-box">
+          <button class="dpad-btn dpad-up" data-cmd="UP"><i data-lucide="chevron-up"></i></button>
+          <button class="dpad-btn dpad-left" data-cmd="LEFT"><i data-lucide="chevron-left"></i></button>
+          <button class="dpad-btn dpad-ok" data-cmd="OK">OK</button>
+          <button class="dpad-btn dpad-right" data-cmd="RIGHT"><i data-lucide="chevron-right"></i></button>
+          <button class="dpad-btn dpad-down" data-cmd="DOWN"><i data-lucide="chevron-down"></i></button>
+        </div>
+
+        <div class="func-grid">
+          <button class="remote-func-btn" data-cmd="BACK"><i data-lucide="corner-down-left"></i><span>返回</span></button>
+          <button class="remote-func-btn" data-cmd="HOME"><i data-lucide="home"></i><span>主页</span></button>
+          <button class="remote-func-btn" data-cmd="QR"><i data-lucide="qr-code"></i><span>二维码</span></button>
+          <button class="remote-func-btn" data-cmd="VOL_UP"><i data-lucide="volume-2"></i><span>音量 +</span></button>
+          <button class="remote-func-btn" data-cmd="VOL_DOWN"><i data-lucide="volume-1"></i><span>音量 -</span></button>
+          <button class="remote-func-btn" data-cmd="MUTE"><i data-lucide="volume-x"></i><span>静音</span></button>
+        </div>
+      </div>
+
+      <!-- Right: Search, Cast, TVBox Source Push -->
+      <div class="remote-card-panel">
+        <div class="form-box">
+          <h3><i data-lucide="search"></i> 文字与搜索推送</h3>
+          <div class="input-group-row">
+            <input type="text" id="remote-search-text" class="input-field" placeholder="输入搜索剧名（如：三体、狂飙、阿凡达）..." />
+            <button class="btn-submit-action" id="btn-push-search"><i data-lucide="send"></i> 推送搜索</button>
+          </div>
+        </div>
+
+        <div class="form-box">
+          <h3><i data-lucide="cast"></i> 视频 URL 一键投屏</h3>
+          <div class="input-group-row">
+            <input type="text" id="remote-cast-url" class="input-field" placeholder="输入 MP4 / M3U8 视频流 URL 地址..." value="https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" />
+            <button class="btn-submit-action" id="btn-push-cast"><i data-lucide="play"></i> 投屏播放</button>
+          </div>
+        </div>
+
+        <div class="form-box">
+          <h3><i data-lucide="plus-circle"></i> TVBox 接口配置推送</h3>
+          <div style="display:flex; flex-direction:column; gap:10px;">
+            <input type="text" id="remote-source-name" class="input-field" placeholder="接口名称 (如: cyao2q 核心包)" />
+            <input type="text" id="remote-source-url" class="input-field" placeholder="https://raw.githubusercontent.com/cyao2q/files/main/tvbox.json" />
+            <button class="btn-submit-action" id="btn-push-source" style="padding: 12px 0;"><i data-lucide="upload"></i> 一键推送配置至电视</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">
+    <i data-lucide="check-circle" class="toast-icon"></i>
+    <span class="toast-msg">操作发送成功！</span>
+  </div>
+
+  <script>
+    lucide.createIcons();
+    const channel = new BroadcastChannel('cuipi_tv_lan');
+
+    function sendSignal(type, payload = {}) {
+      const data = { type, payload, timestamp: Date.now() };
+      channel.postMessage(data);
+      localStorage.setItem('cuipi_tv_signal', JSON.stringify(data));
+
+      if (type === 'CMD') {
+        fetch('/api/remote', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+      } else if (type === 'ADD_SOURCE') {
+        fetch('/api/source', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+      } else if (type === 'CAST_VIDEO') {
+        fetch('/api/cast', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+      } else if (type === 'SEARCH_PUSH') {
+        fetch('/api/search', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }).catch(() => {});
+      }
+
+      showToast(type === 'CMD' ? `已发送按键 [${payload.cmd}]` : '成功推送至电视端！');
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      const toastMsg = toast.querySelector('.toast-msg');
+      toastMsg.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2000);
+    }
+
+    document.querySelectorAll('.dpad-btn, .remote-func-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const cmd = btn.dataset.cmd;
+        if (cmd) sendSignal('CMD', { cmd });
+      });
+    });
+
+    document.getElementById('btn-push-search').addEventListener('click', () => {
+      const val = document.getElementById('remote-search-text').value.trim();
+      if (val) {
+        sendSignal('SEARCH_PUSH', { text: val });
+        document.getElementById('remote-search-text').value = '';
+      }
+    });
+
+    document.getElementById('btn-push-cast').addEventListener('click', () => {
+      const url = document.getElementById('remote-cast-url').value.trim();
+      if (url) {
+        sendSignal('CAST_VIDEO', { url: url, title: '投屏视频' });
+      }
+    });
+
+    document.getElementById('btn-push-source').addEventListener('click', () => {
+      const name = document.getElementById('remote-source-name').value.trim() || '自定义接口';
+      const url = document.getElementById('remote-source-url').value.trim();
+      if (url) {
+        sendSignal('ADD_SOURCE', { name, url });
+        document.getElementById('remote-source-name').value = '';
+        document.getElementById('remote-source-url').value = '';
+      }
+    });
+  </script>
+</body>
+</html>

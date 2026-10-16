@@ -1,0 +1,37 @@
+# Flutter build and cache
+**/build/
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/.pub-cache/
+**/.pub/
+
+# Binaries & large packages
+*.apk
+*.ipa
+*.app/
+*.dmg
+*.zip
+*.tar.gz
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+
+# OS and IDE files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+.idea/
+*.iml
+.vscode/
+*.swp
+*.log
+install_to_iphone.sh

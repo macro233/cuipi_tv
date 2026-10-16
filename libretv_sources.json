@@ -1,0 +1,53 @@
+{
+  "name": "脆皮TV × LibreTV 聚合旗舰订阅",
+  "version": "2.0.0",
+  "description": "兼容 LibreSpark/LibreTV-SourceList 规范，聚合全网高质量 Apple CMS 采集站与 IPTV 直播",
+  "sources": [
+    {
+      "name": "暴风资源 (4K极速)",
+      "url": "https://bfzyapi.com/api.php/provide/vod",
+      "detail": "https://bfzyapi.com"
+    },
+    {
+      "name": "量子资源 (高清切片)",
+      "url": "https://cj.lziapi.com/api.php/provide/vod",
+      "detail": "https://cj.lziapi.com"
+    },
+    {
+      "name": "非凡资源 (多线秒播)",
+      "url": "https://cj.ffzyapi.com/api.php/provide/vod",
+      "detail": "https://cj.ffzyapi.com"
+    },
+    {
+      "name": "索尼资源 (影视大片)",
+      "url": "https://suoniapi.com/api.php/provide/vod",
+      "detail": "https://suoniapi.com"
+    },
+    {
+      "name": "红牛资源 (超清CDN)",
+      "url": "https://www.hongniuzy2.com/api.php/provide/vod",
+      "detail": "https://www.hongniuzy2.com"
+    },
+    {
+      "name": "无尽资源 (全网库容)",
+      "url": "https://api.wujinapi.me/api.php/provide/vod",
+      "detail": "https://api.wujinapi.me"
+    },
+    {
+      "name": "优质资源库 (1080P)",
+      "url": "https://api.1080zyku.com/inc/apijson.php",
+      "detail": "https://api.1080zyku.com"
+    }
+  ],
+  "liveSources": [
+    {
+      "name": "📡 IPTV全球直播 (Fanmingming)",
+      "url": "https://raw.githubusercontent.com/fanmingming/live/main/tv/m3u/global.m3u",
+      "epg": "https://live.fanmingming.com/e.xml"
+    },
+    {
+      "name": "📡 国内央视卫视精选 (IPv4/IPv6)",
+      "url": "https://raw.githubusercontent.com/ssili126/tv/main/tv.m3u"
+    }
+  ]
+}
