@@ -86,9 +86,9 @@ class BauhausArcDialWidget extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: const Color(0x55162E29),
+                        color: const Color(0x66161822),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: const Color(0x337CE1D4)),
+                        border: Border.all(color: const Color(0x33F59E0B)),
                         boxShadow: const [
                           BoxShadow(color: Color(0x33000000), blurRadius: 10),
                         ],
@@ -102,13 +102,13 @@ class BauhausArcDialWidget extends StatelessWidget {
                               Icon(
                                 isVolume ? Icons.volume_up_rounded : Icons.av_timer_rounded,
                                 size: 14,
-                                color: isVolume ? const Color(0xFFFFC83B) : const Color(0xFF7CE1D4),
+                                color: isVolume ? const Color(0xFFFFC83B) : const Color(0xFFF59E0B),
                               ),
                               const SizedBox(width: 5),
                               Text(
                                 titleText,
                                 style: TextStyle(
-                                  color: isVolume ? const Color(0xFFFFC83B) : const Color(0xFF7CE1D4),
+                                  color: isVolume ? const Color(0xFFFFC83B) : const Color(0xFFF59E0B),
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                   letterSpacing: 0.5,
@@ -155,7 +155,7 @@ class BauhausArcDialPainter extends CustomPainter {
     required this.value,
     required this.isVolume,
     this.baseColor = const Color(0x28FFFFFF),
-    this.activeColor = const Color(0xFF7CE1D4),
+    this.activeColor = const Color(0xFFF59E0B),
     this.tickColor = const Color(0x66FFFFFF),
   });
 
@@ -255,7 +255,7 @@ class BauhausArcDialPainter extends CustomPainter {
     canvas.drawCircle(knobCenter + const Offset(0, 2), 11, knobShadowPaint);
 
     final knobOuterPaint = Paint()
-      ..color = const Color(0xFF1B3630)
+      ..color = const Color(0xFF14161E)
       ..style = PaintingStyle.fill;
     canvas.drawCircle(knobCenter, 11, knobOuterPaint);
 
