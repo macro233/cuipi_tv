@@ -27,123 +27,126 @@ class AppTopHeader extends StatelessWidget {
 
     if (isMobile) {
       return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
         child: Row(
           children: [
-            // 1. Seamless Brand Logo & Title
+            // 1. Seamless Brand Mascot Logo & Title
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(9),
-                  child: Image.asset(
-                    'assets/logo.png',
-                    width: 30,
-                    height: 30,
-                    fit: BoxFit.cover,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  "脆皮",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: -0.5,
-                    color: isLight ? theme.textColor : const Color(0xFFFFFDF7),
-                  ),
-                ),
-                const SizedBox(width: 4),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [Color(0xFFFFC83B), Color(0xFFD97706)],
-                    ),
-                    borderRadius: BorderRadius.circular(6),
+                    color: isLight ? Colors.white : Colors.white.withValues(alpha: 0.08),
+                    shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
-                        blurRadius: 4,
+                        color: Colors.black.withValues(alpha: isLight ? 0.06 : 0.2),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
-                  child: const Text(
-                    "TV",
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w900,
-                      color: Color(0xFF14161E),
-                      letterSpacing: 0.5,
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/logo.png',
+                      width: 36,
+                      height: 36,
+                      fit: BoxFit.cover,
                     ),
                   ),
+                ),
+                const SizedBox(width: 10),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "脆皮",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                            color: isLight ? theme.textColor : const Color(0xFFFFFDF7),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1.5),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFFFFC83B), Color(0xFFD97706)],
+                            ),
+                            borderRadius: BorderRadius.circular(6),
+                            boxShadow: [
+                              BoxShadow(
+                                color: const Color(0xFFF59E0B).withValues(alpha: 0.3),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            "TV",
+                            style: TextStyle(
+                              fontSize: 10,
+                              fontWeight: FontWeight.w900,
+                              color: Color(0xFF14161E),
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Text(
+                      "极简高清影院 · 局域网互联",
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w600,
+                        color: isLight ? theme.secondaryTextColor : Colors.white54,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
-            const SizedBox(width: 10),
+            const Spacer(),
 
-            // 2. Navigation tabs: 影视 / 直播 / 本地
-            Expanded(
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                physics: const BouncingScrollPhysics(),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    _buildNavPill("🎬 影视", keyName: "vod", theme: theme, isTv: false),
-                    _buildNavPill("📺 直播", keyName: "live", theme: theme, isTv: false),
-                    _buildNavPill("💾 本地", keyName: "local", theme: theme, isTv: false),
-                  ],
+            // 2. 右侧局域网状态指示 Pill
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              decoration: BoxDecoration(
+                color: isLight ? Colors.white.withValues(alpha: 0.85) : Colors.white.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isLight ? theme.cardBorder : Colors.white.withValues(alpha: 0.15),
                 ),
               ),
-            ),
-            const SizedBox(width: 6),
-
-            // 3. Settings Button
-            TvFocusable(
-              onTap: onOpenSettings,
-              builder: (context, isFocused) {
-                return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isFocused
-                        ? theme.accent
-                        : (isLight
-                            ? Colors.black.withValues(alpha: 0.05)
-                            : Colors.white.withValues(alpha: 0.1)),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: isFocused
-                          ? theme.accent
-                          : (isLight ? theme.cardBorder : Colors.white.withValues(alpha: 0.16)),
-                      width: 1,
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 7,
+                    height: 7,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF10B981),
+                      shape: BoxShape.circle,
                     ),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.settings_outlined,
-                        size: 15,
-                        color: isFocused
-                            ? Colors.white
-                            : (isLight ? theme.textColor : Colors.white),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        "设置",
-                        style: TextStyle(
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w800,
-                          color: isFocused
-                              ? Colors.white
-                              : (isLight ? theme.textColor : Colors.white),
-                        ),
-                      ),
-                    ],
+                  const SizedBox(width: 5),
+                  Text(
+                    "局域网服务",
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: isLight ? theme.textColor : Colors.white,
+                    ),
                   ),
-                );
-              },
+                ],
+              ),
             ),
           ],
         ),
@@ -251,19 +254,22 @@ class AppTopHeader extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 _buildNavPill(
-                  isTv ? "🎬  影视点播" : "🎬 影视点播",
+                  "影视点播",
+                  icon: Icons.movie_filter_rounded,
                   keyName: "vod",
                   theme: theme,
                   isTv: isTv,
                 ),
                 _buildNavPill(
-                  isTv ? "📺  电视直播" : "📺 电视直播",
+                  "电视直播",
+                  icon: Icons.live_tv_rounded,
                   keyName: "live",
                   theme: theme,
                   isTv: isTv,
                 ),
                 _buildNavPill(
-                  isTv ? "💾  本地资源" : "💾 本地资源",
+                  "本地资源",
+                  icon: Icons.dns_rounded,
                   keyName: "local",
                   theme: theme,
                   isTv: isTv,
@@ -349,6 +355,7 @@ class AppTopHeader extends StatelessWidget {
 
   Widget _buildNavPill(
     String title, {
+    IconData? icon,
     required String keyName,
     required ThemePreset theme,
     required bool isTv,
@@ -361,7 +368,7 @@ class AppTopHeader extends StatelessWidget {
       builder: (context, isFocused) {
         return AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          margin: const EdgeInsets.symmetric(horizontal: 3),
+          margin: const EdgeInsets.symmetric(horizontal: 4),
           padding: EdgeInsets.symmetric(
             horizontal: isTv ? 20 : 14,
             vertical: isTv ? 10 : 7,
@@ -391,15 +398,30 @@ class AppTopHeader extends StatelessWidget {
                   ]
                 : null,
           ),
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: isTv ? 15 : 12.5,
-              fontWeight: (isSelected || isFocused) ? FontWeight.w900 : FontWeight.w700,
-              color: (isSelected || isFocused)
-                  ? Colors.white
-                  : (isLight ? theme.textColor : const Color(0xFFCBD5E1)),
-            ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (icon != null) ...[
+                Icon(
+                  icon,
+                  size: isTv ? 18 : 15,
+                  color: (isSelected || isFocused)
+                      ? Colors.white
+                      : (isLight ? theme.textColor : const Color(0xFFCBD5E1)),
+                ),
+                const SizedBox(width: 8),
+              ],
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: isTv ? 15 : 12.5,
+                  fontWeight: (isSelected || isFocused) ? FontWeight.w900 : FontWeight.w700,
+                  color: (isSelected || isFocused)
+                      ? Colors.white
+                      : (isLight ? theme.textColor : const Color(0xFFCBD5E1)),
+                ),
+              ),
+            ],
           ),
         );
       },

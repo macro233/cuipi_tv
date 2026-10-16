@@ -1488,6 +1488,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
     final screenWidth = MediaQuery.of(context).size.width;
     final isMobile = screenWidth < 800;
     final isTv = screenWidth >= 1050;
+    final theme = ThemePreset.getByKey(_currentThemeKey);
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -1533,7 +1534,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                               controller: _mainScrollController,
                               physics: const BouncingScrollPhysics(),
                               padding: EdgeInsets.only(
-                                bottom: _playerDisplayMode == PlayerDisplayMode.mini ? 84 : 0,
+                                bottom: _playerDisplayMode == PlayerDisplayMode.mini ? 84 : 10,
                               ),
                               child: _buildMainTabContent(isMobile: true, isTv: false),
                             )
@@ -1573,6 +1574,10 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                               ],
                             ),
                     ),
+                    if (isMobile) ...[
+                      const SizedBox(height: 6),
+                      _buildMobileBottomNav(theme),
+                    ],
                   ],
                 ),
               ),
@@ -1603,6 +1608,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
 
   // --- Main Tab Router ---
   Widget _buildMainTabContent({bool isMobile = false, bool isTv = false}) {
+    final theme = ThemePreset.getByKey(_currentThemeKey);
     switch (_selectedTab) {
       case 'vod':
         return _buildVodView(isMobile: isMobile, isTv: isTv);
@@ -1612,12 +1618,26 @@ class _TvDashboardViewState extends State<TvDashboardView> {
         return LocalResourceView(
           mediaList: _localMediaList,
           isMobile: isMobile,
+          currentThemeKey: _currentThemeKey,
           onPlayVideo: (item) {
             _playVideo(item.url, item.title);
           },
           onTriggerToast: (msg) => _triggerToast(msg),
           onListUpdated: () {
             setState(() {});
+          },
+        );
+      case 'settings':
+        return SettingsModal(
+          currentThemeKey: _currentThemeKey,
+          onThemeChanged: (newTheme) => setState(() => _currentThemeKey = newTheme),
+          serverUrl: widget.lanServer.serverUrl,
+          onClose: () => setState(() => _selectedTab = 'vod'),
+          onTriggerToast: (msg) => _triggerToast(msg),
+          isEmbedded: true,
+          onSelectSource: (src) {
+            _loadAndParseSource(src.url, src.name);
+            _triggerToast("已切换至源: ${src.name}");
           },
         );
       case 'tvbox':
@@ -1637,6 +1657,113 @@ class _TvDashboardViewState extends State<TvDashboardView> {
       default:
         return _buildVodView(isMobile: isMobile, isTv: isTv);
     }
+  }
+
+  /// 📱 手机专属 MindfulMe 风格现代底部导航栏
+  Widget _buildMobileBottomNav(ThemePreset theme) {
+    final isLight = theme.isLight;
+    return Container(
+      margin: const EdgeInsets.fromLTRB(4, 4, 4, 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: isLight ? Colors.white.withValues(alpha: 0.95) : const Color(0xFF161922).withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: isLight ? theme.cardBorder : Colors.white.withValues(alpha: 0.12),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isLight ? 0.06 : 0.3),
+            blurRadius: 18,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _buildMobileBottomNavItem(
+            keyName: 'vod',
+            label: '影视点播',
+            icon: Icons.movie_filter_rounded,
+            theme: theme,
+          ),
+          _buildMobileBottomNavItem(
+            keyName: 'live',
+            label: '电视直播',
+            icon: Icons.live_tv_rounded,
+            theme: theme,
+          ),
+          _buildMobileBottomNavItem(
+            keyName: 'local',
+            label: '本地硬盘',
+            icon: Icons.folder_special_rounded,
+            theme: theme,
+          ),
+          _buildMobileBottomNavItem(
+            keyName: 'settings',
+            label: '系统设置',
+            icon: Icons.tune_rounded,
+            theme: theme,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMobileBottomNavItem({
+    required String keyName,
+    required String label,
+    required IconData icon,
+    required ThemePreset theme,
+  }) {
+    final isSelected = _selectedTab == keyName;
+    final isLight = theme.isLight;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        setState(() {
+          _selectedTab = keyName;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? (isLight ? const Color(0xFFFFC83B).withValues(alpha: 0.22) : const Color(0xFFFFC83B).withValues(alpha: 0.2))
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          border: isSelected
+              ? Border.all(color: const Color(0xFFFFC83B).withValues(alpha: 0.4), width: 1.0)
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 19,
+              color: isSelected
+                  ? const Color(0xFFE5A000)
+                  : (isLight ? theme.secondaryTextColor : Colors.white60),
+            ),
+            if (isSelected) ...[
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFFE5A000),
+                ),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
   }
 
   // --- VOD View with Poster Wall + Multi-filter ---
@@ -2397,6 +2524,8 @@ class _TvDashboardViewState extends State<TvDashboardView> {
 
     final isExpanded = !isMobile || _expandedCards.contains(key);
     final items = _getItemsForCard(key);
+    final theme = ThemePreset.getByKey(_currentThemeKey);
+    final isLight = theme.isLight;
 
     return Container(
       margin: EdgeInsets.only(
@@ -2405,24 +2534,22 @@ class _TvDashboardViewState extends State<TvDashboardView> {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(isTv ? 32 : 26),
+        border: Border.all(
+          color: isLight ? theme.cardBorder.withOpacity(0.5) : Colors.white.withOpacity(0.08),
+          width: 1.0,
+        ),
         boxShadow: [
-          // 上部阴影：在重叠时清晰划分每一层卡片的上边缘 (参考图2实体卡片质感)
           BoxShadow(
-            color: Colors.black.withOpacity(isMobile ? 0.35 : 0.2),
-            blurRadius: isTv ? 20 : 14,
-            offset: const Offset(0, -3),
-          ),
-          BoxShadow(
-            color: color.withOpacity(0.28),
-            blurRadius: isTv ? 24 : 18,
-            offset: const Offset(0, 6),
+            color: Colors.black.withOpacity(isLight ? 0.04 : 0.22),
+            blurRadius: isTv ? 18 : 12,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // 卡片顶部标题栏（参考图2瑞士包豪斯排版：左边编号+标题，中间极简说明，右边轮廓ICON、折叠指示器与右上角专属搜索）
+          // 卡片顶部标题栏（左边编号+标题，中间极简说明，右边轮廓ICON、折叠指示器）
           InkWell(
             borderRadius: BorderRadius.circular(isTv ? 32 : 26),
             onTap: isMobile
@@ -2440,7 +2567,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
               padding: EdgeInsets.fromLTRB(
                 isMobile ? 14 : (isTv ? 24 : 20),
                 isTv ? 18 : 14,
-                isMobile ? 12 : (isTv ? 22 : 18),
+                isMobile ? 14 : (isTv ? 22 : 18),
                 isTv ? 16 : 12,
               ),
               child: Row(
@@ -2529,7 +2656,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                     color: textColor.withOpacity(0.75),
                   ),
                   if (isMobile) ...[
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 8),
                     // 折叠展开指示箭头
                     Icon(
                       isExpanded ? Icons.keyboard_arrow_up_rounded : Icons.keyboard_arrow_down_rounded,
@@ -2537,38 +2664,6 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                       color: textColor.withOpacity(0.65),
                     ),
                   ],
-                  SizedBox(width: isTv ? 14 : 8),
-                  // 5. 【核心需求】卡片右上角搜索 ICON 🔍
-                  TvFocusable(
-                    onTap: () {
-                      if (key == 'live') {
-                        setState(() => _selectedTab = 'live');
-                      } else {
-                        _switchVodCategory(key, catName: title);
-                      }
-                    },
-                    builder: (context, isFocused) {
-                      return Container(
-                        width: isTv ? 44 : 36,
-                        height: isTv ? 44 : 36,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: isFocused ? textColor : textColor.withOpacity(0.14),
-                          border: Border.all(color: textColor.withOpacity(0.2)),
-                          boxShadow: isFocused ? [BoxShadow(color: textColor.withOpacity(0.35), blurRadius: 10)] : null,
-                        ),
-                        child: Center(
-                          child: Icon(
-                            Icons.search_rounded,
-                            size: isTv ? 23 : 19,
-                            color: isFocused
-                                ? (textColor == const Color(0xFF1E1B18) ? Colors.white : Colors.black)
-                                : textColor,
-                          ),
-                        ),
-                      );
-                    },
-                  ),
                 ],
               ),
             ),
@@ -2583,11 +2678,11 @@ class _TvDashboardViewState extends State<TvDashboardView> {
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.symmetric(horizontal: isMobile ? 14 : (isTv ? 24 : 20), vertical: 6),
-                itemCount: (items.length > 10 ? 10 : items.length) + 1,
+                itemCount: items.length + 1,
                 separatorBuilder: (context, index) => SizedBox(width: isTv ? 16 : 12),
                 itemBuilder: (context, index) {
                   // 最后一个卡片是 "查看全部 >"
-                  if (index == (items.length > 10 ? 10 : items.length)) {
+                  if (index == items.length) {
                     return TvFocusable(
                       onTap: () {
                         if (key == 'live') {
@@ -2859,7 +2954,52 @@ class _TvDashboardViewState extends State<TvDashboardView> {
             physics: const BouncingScrollPhysics(),
             child: Row(
               children: [
-                Text("热门: ", style: TextStyle(fontSize: 11, color: theme.secondaryTextColor)),
+                ...[
+                  {'label': '全部', 'key': 'all'},
+                  {'label': '电影', 'key': 'movie'},
+                  {'label': '电视剧', 'key': 'tv'},
+                  {'label': '综艺', 'key': 'variety'},
+                  {'label': '动漫', 'key': 'anime'},
+                  {'label': '纪录片', 'key': 'doc'},
+                ].map((cat) {
+                  final isSel = _vodCategory == cat['key'];
+                  return GestureDetector(
+                    onTap: () {
+                      _switchVodCategory(cat['key']!, catName: cat['label']!);
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.only(right: 6),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4.5),
+                      decoration: BoxDecoration(
+                        color: isSel
+                            ? const Color(0xFFFFC83B)
+                            : (isLight ? Colors.black.withOpacity(0.05) : Colors.white.withOpacity(0.08)),
+                        borderRadius: BorderRadius.circular(12),
+                        border: isSel
+                            ? Border.all(color: const Color(0xFFD97706), width: 1.0)
+                            : Border.all(color: Colors.transparent),
+                      ),
+                      child: Text(
+                        cat['label']!,
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: isSel ? FontWeight.w900 : FontWeight.w600,
+                          color: isSel
+                              ? const Color(0xFF1E1B18)
+                              : (isLight ? theme.textColor : Colors.white70),
+                        ),
+                      ),
+                    ),
+                  );
+                }).toList(),
+                const SizedBox(width: 6),
+                Container(
+                  width: 1,
+                  height: 14,
+                  color: isLight ? Colors.black12 : Colors.white24,
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+                Text("热搜: ", style: TextStyle(fontSize: 11, color: theme.secondaryTextColor)),
                 ...['三体', '狂飙', '流浪地球', '繁花', '庆余年', '鬼灭之刃', '封神'].map((kw) {
                   return GestureDetector(
                     onTap: () async {
@@ -2875,9 +3015,9 @@ class _TvDashboardViewState extends State<TvDashboardView> {
                     },
                     child: Container(
                       margin: const EdgeInsets.only(right: 6),
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3.5),
                       decoration: BoxDecoration(
-                        color: isLight ? theme.textColor.withOpacity(0.06) : Colors.white.withOpacity(0.08),
+                        color: isLight ? theme.textColor.withOpacity(0.05) : Colors.white.withOpacity(0.08),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Text(
@@ -4309,11 +4449,11 @@ decoration: BoxDecoration(
   // ==========================================
 
   Widget _buildPlayerModalOverlay() {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isLandscape = constraints.maxWidth > constraints.maxHeight && constraints.maxWidth >= 550;
-        return Positioned.fill(
-          child: Focus(
+    return Positioned.fill(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final isLandscape = constraints.maxWidth > constraints.maxHeight && constraints.maxWidth >= 550;
+          return Focus(
             autofocus: true,
             onKeyEvent: (node, event) {
               if (event is KeyDownEvent) {
@@ -4352,9 +4492,9 @@ decoration: BoxDecoration(
             child: isLandscape
                 ? _buildLandscapePlayerLayout(constraints)
                 : _buildPortraitMobilePlayerLayout(constraints),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 

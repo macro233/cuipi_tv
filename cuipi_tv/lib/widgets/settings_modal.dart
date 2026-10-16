@@ -12,6 +12,7 @@ class SettingsModal extends StatefulWidget {
   final VoidCallback onClose;
   final Function(String) onTriggerToast;
   final ValueChanged<VideoSourceModel>? onSelectSource;
+  final bool isEmbedded;
 
   const SettingsModal({
     super.key,
@@ -21,6 +22,7 @@ class SettingsModal extends StatefulWidget {
     required this.onClose,
     required this.onTriggerToast,
     this.onSelectSource,
+    this.isEmbedded = false,
   });
 
   @override
@@ -221,6 +223,120 @@ class _SettingsModalState extends State<SettingsModal> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = ThemePreset.getByKey(widget.currentThemeKey);
+    final isLight = theme.isLight;
+
+    if (widget.isEmbedded) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. 图2 (MindfulMe) 风格 Header Card
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isLight
+                    ? [const Color(0xFFF0FDF4), const Color(0xFFDCFCE7)]
+                    : [const Color(0xFF1E293B), const Color(0xFF0F172A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(
+                color: isLight ? const Color(0xFFBBF7D0) : Colors.white.withValues(alpha: 0.12),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isLight ? 0.04 : 0.25),
+                  blurRadius: 16,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10B981),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF10B981).withValues(alpha: 0.35),
+                        blurRadius: 10,
+                      ),
+                    ],
+                  ),
+                  child: const Icon(Icons.tune_rounded, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "偏好与系统设置",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          color: isLight ? const Color(0xFF065F46) : Colors.white,
+                          letterSpacing: -0.3,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        "艺术色彩主题 · 全网播放源测速 · 局域网服务",
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: isLight ? const Color(0xFF047857) : Colors.white60,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 2. 导航切换 Tabs (图2药丸胶囊)
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: isLight ? Colors.white : const Color(0xFF1B202D),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: isLight ? theme.cardBorder : Colors.white.withValues(alpha: 0.1),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isLight ? 0.03 : 0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                _buildSettingsTabItem(0, "🎨 色彩主题", Icons.palette_outlined),
+                _buildSettingsTabItem(1, "📡 播放源设置", Icons.speed_rounded),
+                _buildSettingsTabItem(2, "📱 局域网服务", Icons.wifi_rounded),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // 3. Tab 内容
+          _settingsTab == 0
+              ? _buildThemeSettingsSection()
+              : (_settingsTab == 1
+                  ? _buildSourcesSettingsSection()
+                  : _buildLanSettingsSection()),
+        ],
+      );
+    }
+
     return Positioned.fill(
       child: Container(
         color: Colors.black.withValues(alpha: 0.75),
