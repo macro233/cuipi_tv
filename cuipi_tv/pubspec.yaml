@@ -35,6 +35,8 @@ dependencies:
   qr_flutter: ^4.1.0
   video_player: ^2.9.2
   http: ^1.2.1
+  path_provider: ^2.1.6
+  crypto: ^3.0.7
 
 
 
