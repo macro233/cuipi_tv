@@ -1838,7 +1838,16 @@ class _TvDashboardViewState extends State<TvDashboardView> {
               ),
             )
           else
-            ...enabledCardList.asMap().entries.map((entry) => _buildSwissModularCard(entry.value, isMobile: isMobile, index: entry.key)),
+            ...enabledCardList.asMap().entries.map((entry) {
+              final cardWidget = _buildSwissModularCard(entry.value, isMobile: isMobile, index: entry.key);
+              if (isMobile && _deckStackedMode && entry.key > 0) {
+                return Transform.translate(
+                  offset: Offset(0, -14.0 * entry.key),
+                  child: cardWidget,
+                );
+              }
+              return cardWidget;
+            }),
 
           const SizedBox(height: 12),
           // 快捷切换全库瀑布流
@@ -2363,8 +2372,7 @@ class _TvDashboardViewState extends State<TvDashboardView> {
 
     return Container(
       margin: EdgeInsets.only(
-        top: (isMobile && _deckStackedMode && index > 0) ? -16.0 : 0.0,
-        bottom: (isMobile && _deckStackedMode) ? 0.0 : 18.0,
+        bottom: (isMobile && _deckStackedMode) ? 4.0 : 18.0,
       ),
       decoration: BoxDecoration(
         color: color,
